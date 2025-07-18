@@ -164,6 +164,7 @@
             font-weight: bold;
             color: #333;
             margin-bottom: 15px;
+            line-height: 1.4;
         }
 
         .question-counter {
@@ -277,6 +278,17 @@
             display: none;
         }
 
+        .category-badge {
+            background: #28a745;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
         @media (max-width: 768px) {
             .container {
                 width: 95%;
@@ -303,7 +315,7 @@
     <div class="container">
         <div class="header">
             <h1>🏗️ AI स्कैफोल्डिंग इंटरव्यू सिस्टम</h1>
-            <p>कप्लोक स्कैफोल्डिंग और ऊंचाई पर काम के लिए इंटरव्यू</p>
+            <p>कप्लोक स्कैफोल्डिंग और ऊंचाई पर काम के लिए व्यापक सुरक्षा इंटरव्यू</p>
         </div>
 
         <div class="content">
@@ -361,7 +373,8 @@
                 </div>
                 
                 <div class="question-container">
-                    <div class="question-counter" id="questionCounter">प्रश्न 1/10</div>
+                    <div class="category-badge" id="categoryBadge">बुनियादी जानकारी</div>
+                    <div class="question-counter" id="questionCounter">प्रश्न 1/15</div>
                     <div class="question-text" id="questionText">इंटरव्यू शुरू करने के लिए तैयार हो जाइए...</div>
                 </div>
                 
@@ -380,8 +393,8 @@
             <div class="section" id="results">
                 <div class="result-container">
                     <div class="result-icon">🎉</div>
-                    <div class="result-text">बधाई हो! आपका इंटरव्यू पूरा हो गया है।</div>
-                    <p style="margin-bottom: 20px;">आपके जवाब Google Sheets में सेव हो गए हैं। परिणाम जल्द ही आपको बताया जाएगा।</p>
+                    <div class="result-text">बधाई हो! आपका स्कैफोल्डिंग सुरक्षा इंटरव्यू पूरा हो गया है।</div>
+                    <p style="margin-bottom: 20px;">आपके सभी जवाब सुरक्षित रूप से रिकॉर्ड हो गए हैं। विस्तृत परिणाम जल्द ही आपको बताया जाएगा।</p>
                     <button class="btn" onclick="restartInterview()">नया इंटरव्यू शुरू करें</button>
                 </div>
             </div>
@@ -401,28 +414,92 @@
         let recordingStartTime;
         let currentSpeechUtterance;
 
-        // Shuffled questions about Cuplok scaffolding and working at height
-        const questions = [
-            "कप्लोक स्कैफोल्डिंग क्या है और इसका उपयोग क्यों किया जाता है?",
-            "ऊंचाई पर काम करते समय कौन से मुख्य सुरक्षा उपाय अपनाने चाहिए?",
-            "कप्लोक स्कैफोल्डिंग के मुख्य कंपोनेंट कौन से हैं?",
-            "स्कैफोल्डिंग इंस्टॉल करने से पहले किन चीजों की जांच करनी चाहिए?",
-            "PPE (Personal Protective Equipment) में कौन से आइटम शामिल होते हैं?",
-            "स्कैफोल्डिंग पर काम करते समय कितना वजन रख सकते हैं?",
-            "यदि स्कैफोल्डिंग में कोई कमी या खराबी दिखे तो क्या करना चाहिए?",
-            "कप्लोक सिस्टम की मजबूती कैसे चेक करते हैं?",
-            "बारिश या तेज हवा के दौरान स्कैफोल्डिंग पर काम करना चाहिए या नहीं?",
-            "स्कैफोल्डिंग से गिरने या चोट लगने पर तुरंत क्या करना चाहिए?",
-            "टाई-रॉड्स और ब्रेसिंग का क्या महत्व है?",
-            "Base plate और sole plate में क्या अंतर है?",
-            "स्कैफोल्डिंग की सही height कैसे maintain करते हैं?",
-            "Ledger और transom का क्या काम है?",
-            "Safety harness कैसे पहनना चाहिए?",
-            "जमीन की जांच क्यों जरूरी है स्कैफोल्डिंग लगाने से पहले?",
-            "स्कैफोल्डिंग पर tools कैसे रखने चाहिए?",
-            "Fall arrest system क्या है?",
-            "स्कैफोल्डिंग को कैसे dismantle करना चाहिए?",
-            "Emergency के दौरान कैसे जल्दी नीचे आना चाहिए?"
+        // Comprehensive scaffolding safety questions with categories
+        const scaffoldingQuestions = [
+            // Basic Knowledge
+            {
+                question: "स्कैफोल्डिंग क्या होता है और इसका मुख्य उद्देश्य क्या है?",
+                category: "बुनियादी जानकारी",
+                difficulty: "easy"
+            },
+            {
+                question: "स्कैफोल्डिंग के मुख्य पार्ट्स कौन से हैं? कम से कम 5 नाम बताइए।",
+                category: "बुनियादी जानकारी",
+                difficulty: "medium"
+            },
+            {
+                question: "कप्लोक स्कैफोल्डिंग सिस्टम क्या है और यह दूसरे सिस्टम से कैसे अलग है?",
+                category: "बुनियादी जानकारी",
+                difficulty: "medium"
+            },
+            
+            // Components and Parts
+            {
+                question: "बेस प्लेट और सोल प्लेट के बीच क्या अंतर है? दोनों का साइज़ बताइए।",
+                category: "कंपोनेंट्स",
+                difficulty: "medium"
+            },
+            {
+                question: "लेजर्स और ट्रांसोम का क्या काम है? इनके बिना स्कैफोल्डिंग क्यों अधूरी है?",
+                category: "कंपोनेंट्स",
+                difficulty: "medium"
+            },
+            {
+                question: "ब्रेसिंग के कितने प्रकार होते हैं और हर एक का क्या काम है?",
+                category: "कंपोनेंट्स",
+                difficulty: "hard"
+            },
+            
+            // Safety Measures
+            {
+                question: "ऊंचाई पर काम करते समय कौन से PPE ज़रूरी हैं? विस्तार से बताइए।",
+                category: "सुरक्षा उपाय",
+                difficulty: "medium"
+            },
+            {
+                question: "टो बोर्ड का साइज़ क्या होता है और यह क्यों ज़रूरी है?",
+                category: "सुरक्षा उपाय",
+                difficulty: "easy"
+            },
+            {
+                question: "गार्ड रेल सिस्टम में कौन से parts होते हैं और उनकी height क्या होनी चाहिए?",
+                category: "सुरक्षा उपाय",
+                difficulty: "hard"
+            },
+            
+            // Inspection and Safety
+            {
+                question: "स्कैफोल्डिंग का inspection कब और कैसे करना चाहिए? मुख्य चेक पॉइंट्स बताइए।",
+                category: "निरीक्षण",
+                difficulty: "hard"
+            },
+            {
+                question: "स्कैफोल्डिंग में तीन रंग के टैग का क्या मतलब है - Green, Yellow और Red?",
+                category: "निरीक्षण",
+                difficulty: "medium"
+            },
+            {
+                question: "किन परिस्थितियों में स्कैफोल्डिंग का निर्माण नहीं करना चाहिए?",
+                category: "निरीक्षण",
+                difficulty: "medium"
+            },
+            
+            // Emergency and Hazards
+            {
+                question: "स्कैफोल्डिंग work के दौरान कौन से मुख्य hazards हो सकते हैं?",
+                category: "आपातकाल",
+                difficulty: "medium"
+            },
+            {
+                question: "यदि स्कैफोल्डिंग में कोई कमी या damage दिखे तो तुरंत क्या action लेना चाहिए?",
+                category: "आपातकाल",
+                difficulty: "medium"
+            },
+            {
+                question: "Fall protection system कब और कैसे use करना चाहिए? Lifeline क्या है?",
+                category: "आपातकाल",
+                difficulty: "hard"
+            }
         ];
 
         // Shuffle array function
@@ -435,8 +512,8 @@
             return shuffled;
         }
 
-        // Get 10 random questions
-        const selectedQuestions = shuffleArray(questions).slice(0, 10);
+        // Get randomized questions
+        const selectedQuestions = shuffleArray(scaffoldingQuestions);
 
         // Form submission
         document.getElementById('candidateForm').addEventListener('submit', function(e) {
@@ -449,7 +526,7 @@
                 experience: document.getElementById('experience').value,
                 location: document.getElementById('location').value,
                 timestamp: new Date().toISOString(),
-                interviewId: 'INT_' + Date.now()
+                interviewId: 'SCAFFOLD_' + Date.now()
             };
 
             showSection('interview');
@@ -489,8 +566,23 @@
         // Show current question
         function showQuestion() {
             if (currentQuestion < selectedQuestions.length) {
-                document.getElementById('questionCounter').textContent = `प्रश्न ${currentQuestion + 1}/10`;
-                document.getElementById('questionText').textContent = selectedQuestions[currentQuestion];
+                const questionData = selectedQuestions[currentQuestion];
+                
+                document.getElementById('questionCounter').textContent = `प्रश्न ${currentQuestion + 1}/${selectedQuestions.length}`;
+                document.getElementById('questionText').textContent = questionData.question;
+                document.getElementById('categoryBadge').textContent = questionData.category;
+                
+                // Category colors
+                const categoryColors = {
+                    'बुनियादी जानकारी': '#28a745',
+                    'कंपोनेंट्स': '#007bff',
+                    'सुरक्षा उपाय': '#ffc107',
+                    'निरीक्षण': '#17a2b8',
+                    'आपातकाल': '#dc3545'
+                };
+                
+                document.getElementById('categoryBadge').style.background = 
+                    categoryColors[questionData.category] || '#28a745';
                 
                 // Show AI speaking indicator
                 document.getElementById('aiSpeaking').style.display = 'block';
@@ -502,7 +594,7 @@
                 }
                 
                 // Speak question and auto-start recording
-                speakQuestionAndRecord(selectedQuestions[currentQuestion]);
+                speakQuestionAndRecord(questionData.question);
                 
             } else {
                 completeInterview();
@@ -517,15 +609,15 @@
                 
                 currentSpeechUtterance = new SpeechSynthesisUtterance(text);
                 currentSpeechUtterance.lang = 'hi-IN';
-                currentSpeechUtterance.rate = 0.8;
-                currentSpeechUtterance.pitch = 1.1;
+                currentSpeechUtterance.rate = 0.7;
+                currentSpeechUtterance.pitch = 1.0;
                 
                 // Auto-start recording when speech ends
                 currentSpeechUtterance.onend = function() {
                     document.getElementById('aiSpeaking').style.display = 'none';
                     setTimeout(() => {
                         startRecording();
-                    }, 1000); // 1 second delay after speech ends
+                    }, 1000);
                 };
                 
                 window.speechSynthesis.speak(currentSpeechUtterance);
@@ -534,7 +626,7 @@
                 document.getElementById('aiSpeaking').style.display = 'none';
                 setTimeout(() => {
                     startRecording();
-                }, 2000); // 2 seconds delay
+                }, 2000);
             }
         }
 
@@ -558,7 +650,9 @@
                 // Save answer data
                 interviewAnswers.push({
                     questionNumber: currentQuestion + 1,
-                    question: selectedQuestions[currentQuestion],
+                    question: selectedQuestions[currentQuestion].question,
+                    category: selectedQuestions[currentQuestion].category,
+                    difficulty: selectedQuestions[currentQuestion].difficulty,
                     recordingBlob: blob,
                     recordingDuration: getRecordingDuration(),
                     timestamp: new Date().toISOString()
@@ -571,7 +665,7 @@
             
             // Show recording UI
             document.getElementById('recordingTimer').style.display = 'block';
-            document.getElementById('statusText').textContent = 'रिकॉर्डिंग चल रही है - अपना जवाब दें';
+            document.getElementById('statusText').textContent = 'रिकॉर्डिंग चल रही है - अपना विस्तृत जवाब दें';
             document.getElementById('statusDot').classList.add('recording');
             
             // Start timer
@@ -586,7 +680,7 @@
                 
                 // Hide recording UI
                 document.getElementById('recordingTimer').style.display = 'none';
-                document.getElementById('statusText').textContent = 'जवाब रिकॉर्ड हो गया';
+                document.getElementById('statusText').textContent = 'जवाब रिकॉर्ड हो गया - अगला प्रश्न के लिए तैयार';
                 document.getElementById('statusDot').classList.remove('recording');
                 
                 // Stop timer
@@ -649,8 +743,8 @@
                 window.speechSynthesis.cancel();
             }
             
-            // Save data to Google Sheets
-            saveToGoogleSheets();
+            // Save data
+            saveInterviewData();
             
             // Stop camera
             if (stream) {
@@ -660,20 +754,27 @@
             showSection('results');
         }
 
-        // Save to Google Sheets (placeholder)
-        function saveToGoogleSheets() {
+        // Save interview data
+        function saveInterviewData() {
             const finalData = {
                 candidate: candidateData,
+                totalQuestions: selectedQuestions.length,
                 answers: interviewAnswers.map(answer => ({
                     questionNumber: answer.questionNumber,
                     question: answer.question,
+                    category: answer.category,
+                    difficulty: answer.difficulty,
                     recordingDuration: answer.recordingDuration,
                     timestamp: answer.timestamp
                 })),
-                completedAt: new Date().toISOString()
+                completedAt: new Date().toISOString(),
+                interviewType: 'Scaffolding Safety Assessment'
             };
             
-            console.log('Data to save:', finalData);
+            console.log('Complete Interview Data:', finalData);
+            
+            // Here you would typically send this data to your backend
+            // For now, we're just logging it
         }
 
         // Show section
@@ -691,8 +792,9 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Auto-Recording Scaffolding Interview App Initialized');
-            console.log('Questions loaded:', selectedQuestions.length);
+            console.log('Enhanced Scaffolding Safety Interview System Initialized');
+            console.log('Total Questions Available:', scaffoldingQuestions.length);
+            console.log('Selected Questions for Interview:', selectedQuestions.length);
         });
     </script>
 </body>
