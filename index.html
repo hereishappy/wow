@@ -771,7 +771,7 @@
                 interviewType: 'Scaffolding Safety Assessment'
             };
             
-           fetch('https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbyNLoFPn08HFfrI0dXmd5STxKLuPXSf3FNfUNvi5PsyfxPPTbS5Z-CeNXHb4I1f82jTjA/exec', {
+     fetch('https://script.google.com/macros/s/AKfycbyNLoFPn08HFfrI0dXmd5STxKLuPXSf3FNfUNvi5PsyfxPPTbS5Z-CeNXHb4I1f82jTjA/exec', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
@@ -781,11 +781,12 @@
 .then(res => res.text())
 .then(response => {
     console.log('✅ Data sent to Google Sheet:', response);
+    alert("✅ Data sent to Google Sheet successfully!");
 })
 .catch(error => {
     console.error('❌ Error sending data to Google Sheet:', error);
+    alert("❌ Failed to send data to Google Sheet.");
 });
-
             
             // Here you would typically send this data to your backend
             // For now, we're just logging it
