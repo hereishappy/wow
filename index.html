@@ -200,9 +200,19 @@
             animation: blink 1s infinite;
         }
 
+        .status-dot.recording {
+            background: #dc3545;
+            animation: recordingPulse 1s infinite;
+        }
+
         @keyframes blink {
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0.3; }
+        }
+
+        @keyframes recordingPulse {
+            0%, 100% { transform: scale(1); background: #dc3545; }
+            50% { transform: scale(1.3); background: #ff6b6b; }
         }
 
         .progress-bar {
@@ -243,6 +253,28 @@
             padding: 20px;
             margin-bottom: 20px;
             color: #856404;
+        }
+
+        .recording-timer {
+            background: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .ai-speaking {
+            background: #17a2b8;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: none;
         }
 
         @media (max-width: 768px) {
@@ -308,11 +340,19 @@
             <!-- Interview Section -->
             <div class="section" id="interview">
                 <div class="permission-note">
-                    <strong>महत्वपूर्ण:</strong> इंटरव्यू के लिए कैमरा और माइक्रोफोन की अनुमति दें। आपके जवाब रिकॉर्ड किए जाएंगे।
+                    <strong>महत्वपूर्ण:</strong> इंटरव्यू के लिए कैमरा और माइक्रोफोन की अनुमति दें। प्रश्न पूछने के बाद रिकॉर्डिंग अपने आप शुरू हो जाएगी।
                 </div>
                 
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressFill"></div>
+                </div>
+                
+                <div class="ai-speaking" id="aiSpeaking">
+                    <span>🎤 AI प्रश्न पूछ रहा है...</span>
+                </div>
+                
+                <div class="recording-timer" id="recordingTimer">
+                    <span>🔴 रिकॉर्डिंग चल रही है - समय: <span id="timerDisplay">00:00</span></span>
                 </div>
                 
                 <div class="video-container">
@@ -326,14 +366,14 @@
                 </div>
                 
                 <div class="status-indicator" id="statusIndicator">
-                    <div class="status-dot"></div>
+                    <div class="status-dot" id="statusDot"></div>
                     <span id="statusText">तैयार हो रहा है...</span>
                 </div>
                 
                 <div class="controls">
                     <button class="btn" id="startBtn" onclick="startInterview()">इंटरव्यू शुरू करें</button>
                     <button class="btn" id="nextBtn" onclick="nextQuestion()" style="display: none;">अगला प्रश्न</button>
-                    <button class="btn" id="recordBtn" onclick="toggleRecording()" style="display: none;">रिकॉर्डिंग शुरू करें</button>
+                    <button class="btn" id="stopRecordBtn" onclick="stopCurrentRecording()" style="display: none;">रिकॉर्डिंग बंद करें</button>
                 </div>
             </div>
 
@@ -358,6 +398,9 @@
         let isRecording = false;
         let stream;
         let interviewAnswers = [];
+        let recordingTimer;
+        let recordingStartTime;
+        let currentSpeechUtterance;
 
         // Shuffled questions about Cuplok scaffolding and working at height
         const questions = [
@@ -437,8 +480,8 @@
         // Start interview
         function startInterview() {
             document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('recordBtn').style.display = 'block';
             document.getElementById('nextBtn').style.display = 'block';
+            document.getElementById('stopRecordBtn').style.display = 'block';
             
             currentQuestion = 0;
             showQuestion();
@@ -451,41 +494,56 @@
                 document.getElementById('questionCounter').textContent = `प्रश्न ${currentQuestion + 1}/10`;
                 document.getElementById('questionText').textContent = selectedQuestions[currentQuestion];
                 
-                // Simulate AI speaking (you can integrate with actual TTS)
-                speakQuestion(selectedQuestions[currentQuestion]);
+                // Show AI speaking indicator
+                document.getElementById('aiSpeaking').style.display = 'block';
+                document.getElementById('recordingTimer').style.display = 'none';
                 
-                // Enable recording for this question
-                document.getElementById('recordBtn').style.display = 'block';
-                document.getElementById('recordBtn').textContent = 'रिकॉर्डिंग शुरू करें';
-                document.getElementById('recordBtn').disabled = false;
+                // Stop any ongoing recording
+                if (isRecording) {
+                    stopRecording();
+                }
+                
+                // Speak question and auto-start recording
+                speakQuestionAndRecord(selectedQuestions[currentQuestion]);
                 
             } else {
                 completeInterview();
             }
         }
 
-        // Text-to-speech simulation (you can replace with actual TTS)
-        function speakQuestion(text) {
+        // Text-to-speech and auto-start recording
+        function speakQuestionAndRecord(text) {
             if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'hi-IN';
-                utterance.rate = 0.8;
-                utterance.pitch = 1.1;
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        // Toggle recording
-        function toggleRecording() {
-            if (!isRecording) {
-                startRecording();
+                // Stop any ongoing speech
+                window.speechSynthesis.cancel();
+                
+                currentSpeechUtterance = new SpeechSynthesisUtterance(text);
+                currentSpeechUtterance.lang = 'hi-IN';
+                currentSpeechUtterance.rate = 0.8;
+                currentSpeechUtterance.pitch = 1.1;
+                
+                // Auto-start recording when speech ends
+                currentSpeechUtterance.onend = function() {
+                    document.getElementById('aiSpeaking').style.display = 'none';
+                    setTimeout(() => {
+                        startRecording();
+                    }, 1000); // 1 second delay after speech ends
+                };
+                
+                window.speechSynthesis.speak(currentSpeechUtterance);
             } else {
-                stopRecording();
+                // Fallback if TTS not supported
+                document.getElementById('aiSpeaking').style.display = 'none';
+                setTimeout(() => {
+                    startRecording();
+                }, 2000); // 2 seconds delay
             }
         }
 
         // Start recording
         function startRecording() {
+            if (isRecording) return;
+            
             recordedChunks = [];
             
             mediaRecorder = new MediaRecorder(stream);
@@ -497,7 +555,6 @@
             
             mediaRecorder.onstop = function() {
                 const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                // Here you would typically upload the blob to your server
                 console.log('Recording saved', blob);
                 
                 // Save answer data
@@ -505,15 +562,22 @@
                     questionNumber: currentQuestion + 1,
                     question: selectedQuestions[currentQuestion],
                     recordingBlob: blob,
+                    recordingDuration: getRecordingDuration(),
                     timestamp: new Date().toISOString()
                 });
             };
             
             mediaRecorder.start();
             isRecording = true;
+            recordingStartTime = Date.now();
             
-            document.getElementById('recordBtn').textContent = 'रिकॉर्डिंग बंद करें';
-            document.getElementById('statusText').textContent = 'रिकॉर्डिंग चल रही है...';
+            // Show recording UI
+            document.getElementById('recordingTimer').style.display = 'block';
+            document.getElementById('statusText').textContent = 'रिकॉर्डिंग चल रही है - अपना जवाब दें';
+            document.getElementById('statusDot').classList.add('recording');
+            
+            // Start timer
+            startRecordingTimer();
         }
 
         // Stop recording
@@ -522,16 +586,53 @@
                 mediaRecorder.stop();
                 isRecording = false;
                 
-                document.getElementById('recordBtn').textContent = 'रिकॉर्डिंग पूरी हुई';
-                document.getElementById('recordBtn').disabled = true;
+                // Hide recording UI
+                document.getElementById('recordingTimer').style.display = 'none';
                 document.getElementById('statusText').textContent = 'जवाब रिकॉर्ड हो गया';
+                document.getElementById('statusDot').classList.remove('recording');
+                
+                // Stop timer
+                if (recordingTimer) {
+                    clearInterval(recordingTimer);
+                }
             }
+        }
+
+        // Stop current recording manually
+        function stopCurrentRecording() {
+            if (isRecording) {
+                stopRecording();
+            }
+        }
+
+        // Start recording timer
+        function startRecordingTimer() {
+            recordingTimer = setInterval(() => {
+                const elapsed = Date.now() - recordingStartTime;
+                const minutes = Math.floor(elapsed / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                document.getElementById('timerDisplay').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // Get recording duration
+        function getRecordingDuration() {
+            if (recordingStartTime) {
+                return Date.now() - recordingStartTime;
+            }
+            return 0;
         }
 
         // Next question
         function nextQuestion() {
             if (isRecording) {
                 stopRecording();
+            }
+            
+            // Stop any ongoing speech
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
             }
             
             currentQuestion++;
@@ -547,7 +648,17 @@
 
         // Complete interview
         function completeInterview() {
-            // Save data to Google Sheets (you'll need to implement this)
+            // Stop any ongoing recording
+            if (isRecording) {
+                stopRecording();
+            }
+            
+            // Stop any ongoing speech
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            
+            // Save data to Google Sheets
             saveToGoogleSheets();
             
             // Stop camera
@@ -558,22 +669,20 @@
             showSection('results');
         }
 
-        // Save to Google Sheets (placeholder - you'll need to implement with Google Sheets API)
+        // Save to Google Sheets (placeholder)
         function saveToGoogleSheets() {
             const finalData = {
                 candidate: candidateData,
                 answers: interviewAnswers.map(answer => ({
                     questionNumber: answer.questionNumber,
                     question: answer.question,
+                    recordingDuration: answer.recordingDuration,
                     timestamp: answer.timestamp
                 })),
                 completedAt: new Date().toISOString()
             };
             
             console.log('Data to save:', finalData);
-            
-            // Here you would send data to your Google Sheets API endpoint
-            // Example: fetch('/api/save-interview', { method: 'POST', body: JSON.stringify(finalData) })
         }
 
         // Show section
@@ -591,7 +700,7 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Scaffolding Interview App Initialized');
+            console.log('Auto-Recording Scaffolding Interview App Initialized');
             console.log('Questions loaded:', selectedQuestions.length);
         });
     </script>
