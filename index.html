@@ -91,11 +91,11 @@
     let shuffled = [];
     let recorder, audioChunks = [];
     let scores = [];
+    let interviewAnswers = [];
     let hindiVoice;
 
     window.speechSynthesis.onvoiceschanged = () => {
       const voices = speechSynthesis.getVoices();
-      // Try to get a female Hindi voice
       hindiVoice = voices.find(voice =>
         voice.lang === "hi-IN" && voice.name.toLowerCase().includes("female")
       ) || voices.find(v => v.lang === "hi-IN") || voices[0];
@@ -111,6 +111,7 @@
       shuffled = questions.sort(() => 0.5 - Math.random()).slice(0, 10);
       current = 0;
       scores = [];
+      interviewAnswers = [];
       document.getElementById("startBtn").style.display = "none";
       document.getElementById("answersContainer").innerHTML = "";
       askQuestion();
@@ -124,7 +125,7 @@
 
       const q = shuffled[current];
       document.getElementById("questionBox").innerText = `प्रश्न ${current + 1}: ${q}`;
-      speakQuestion(q); // 🔊 Speak Hindi voice
+      speakQuestion(q);
       startTimer(20);
       startRecording();
     }
@@ -135,7 +136,7 @@
       msg.lang = "hi-IN";
       msg.voice = hindiVoice;
       msg.rate = 0.9;
-      window.speechSynthesis.cancel(); // Stop previous speech if any
+      window.speechSynthesis.cancel();
       window.speechSynthesis.speak(msg);
     }
 
@@ -183,6 +184,11 @@
           div.innerHTML = `${questionText}<br>${audio}<br><br>${scoreSelect}`;
           container.appendChild(div);
 
+          interviewAnswers.push({
+            question: shuffled[current],
+            audioURL: audioURL
+          });
+
           scores[current] = 0;
           current++;
           setTimeout(() => askQuestion(), 1000);
@@ -202,8 +208,12 @@
       scores[index] = parseInt(value) || 0;
     }
 
+    function calculateScore() {
+      return scores.reduce((a, b) => a + b, 0);
+    }
+
     function endInterview() {
-      const total = scores.reduce((a, b) => a + b, 0);
+      const total = calculateScore();
       document.getElementById("questionBox").innerText = "✅ इंटरव्यू समाप्त हो गया!";
       document.getElementById("timer").innerText = "";
       document.getElementById("startBtn").style.display = "block";
@@ -214,31 +224,36 @@
         <p>धन्यवाद! आपने इंटरव्यू पूरा किया।</p>
       `;
 
-      const candidate = document.getElementById("candidateName").value.trim();
-      const mobile = document.getElementById("candidateMobile").value.trim();
-      postToBlogger(candidate, mobile, total);
+      const candidateData = {
+        name: document.getElementById("candidateName").value.trim(),
+        mobile: document.getElementById("candidateMobile").value.trim()
+      };
+
+      saveInterviewData(candidateData);
     }
 
-    function postToBlogger(candidate, mobile, score) {
-      fetch("https://script.google.com/macros/s/AKfycbyEHkluguvDcNGVQA3SqNX7xZWpchq2FRQWQTbGUtwvLhQyMFBDmKsazBGq9c_mHvRXgg/exec", {
-        method: "POST",
+    function saveInterviewData(candidateData) {
+      const score = calculateScore();
+
+      fetch('https://script.google.com/macros/s/AKfycbyEHkluguvDcNGVQA3SqNX7xZWpchq2FRQWQTbGUtwvLhQyMFBDmKsazBGq9c_mHvRXgg/exec', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json"
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          candidate: candidate,
-          mobile: mobile,
+          candidate: candidateData.name,
+          mobile: candidateData.mobile,
           score: score
         })
       })
       .then(res => res.text())
-      .then(data => {
-        alert("✅ स्कोर Blogger पर पोस्ट हो गया!");
-        console.log(data);
+      .then(response => {
+        console.log('✅ Score posted to Blogger:', response);
+        alert("✅ इंटरव्यू स्कोर Blogger पर पोस्ट हो गया!");
       })
-      .catch(err => {
-        alert("❌ पोस्ट करने में समस्या आई!");
-        console.error(err);
+      .catch(error => {
+        console.error('❌ पोस्ट करने में समस्या:', error);
+        alert("❌ Blogger पर पोस्ट नहीं हो पाया।");
       });
     }
   </script>
