@@ -408,11 +408,11 @@
             <div class="section" id="results">
                 <div class="result-container">
                     <div class="sync-status" id="syncStatus">
-                        <span>📊 डेटा Google Sheet में सेव हो रहा है...</span>
+                        <span>📊 डेटा Google Sheet "HAPPY SCREENING" में सेव हो रहा है...</span>
                     </div>
                     <div class="result-icon">🎉</div>
                     <div class="result-text">बधाई हो! आपका स्कैफोल्डिंग सुरक्षा इंटरव्यू पूरा हो गया है।</div>
-                    <p style="margin-bottom: 20px;">आपके सभी जवाब सुरक्षित रूप से रिकॉर्ड हो गए हैं और Google Sheet में सेव हो गए हैं।</p>
+                    <p style="margin-bottom: 20px;">आपके सभी जवाब सुरक्षित रूप से रिकॉर्ड हो गए हैं और Google Sheet "HAPPY SCREENING" में सेव हो गए हैं।</p>
                     <button class="btn" onclick="restartInterview()">नया इंटरव्यू शुरू करें</button>
                 </div>
             </div>
@@ -420,8 +420,9 @@
     </div>
 
     <script>
-        // Updated Google Script URL - Replace with your actual web app URL
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_WEB_APP_ID/exec';
+        // Updated Google Script URL - Your actual web app URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNLoFPn08HFfrI0dXmd5STxKLuPXSf3FNfUNvi5PsyfxPPTbS5Z-CeNXHb4I1f82jTjA/exec';
+        const SHEET_NAME = 'HAPPY SCREENING';
 
         // Global variables
         let currentQuestion = 0;
@@ -434,6 +435,7 @@
         let recordingTimer;
         let recordingStartTime;
         let currentSpeechUtterance;
+        let interviewStartTime;
 
         // Comprehensive scaffolding safety questions with categories
         const scaffoldingQuestions = [
@@ -549,7 +551,13 @@
             const syncStatusEl = document.getElementById('syncStatus');
             
             try {
-                syncStatusEl.innerHTML = '<span>📊 डेटा Google Sheet में सेव हो रहा है...</span>';
+                syncStatusEl.innerHTML = `<span>📊 डेटा Google Sheet "${SHEET_NAME}" में सेव हो रहा है...</span>`;
+                
+                // Add sheet name to the data
+                const dataWithSheet = {
+                    ...data,
+                    sheetName: SHEET_NAME
+                };
                 
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
@@ -557,17 +565,17 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(dataWithSheet)
                 });
                 
                 // Since mode is 'no-cors', we can't read the response
                 // We'll assume success if no error is thrown
-                syncStatusEl.innerHTML = '<span>✅ डेटा सफलतापूर्वक Google Sheet "HAPPY SCREENING" में सेव हो गया!</span>';
+                syncStatusEl.innerHTML = `<span>✅ डेटा सफलतापूर्वक Google Sheet "${SHEET_NAME}" में सेव हो गया!</span>`;
                 syncStatusEl.classList.add('success');
                 
             } catch (error) {
                 console.error('Error sending to Google Sheets:', error);
-                syncStatusEl.innerHTML = '<span>❌ Google Sheet में डेटा सेव करने में समस्या आई। कृपया दोबारा कोशिश करें।</span>';
+                syncStatusEl.innerHTML = `<span>❌ Google Sheet "${SHEET_NAME}" में डेटा सेव करने में समस्या आई। कृपया दोबारा कोशिश करें।</span>`;
                 syncStatusEl.classList.add('error');
             }
         }
@@ -614,6 +622,7 @@
             document.getElementById('nextBtn').style.display = 'block';
             
             currentQuestion = 0;
+            interviewStartTime = Date.now();
             showQuestion();
             updateProgress();
         }
@@ -764,6 +773,14 @@
             return 0;
         }
 
+        // Get interview duration
+        function getInterviewDuration() {
+            if (interviewStartTime) {
+                return Date.now() - interviewStartTime;
+            }
+            return 0;
+        }
+
         // Next question
         function nextQuestion() {
             if (isRecording) {
@@ -799,28 +816,3 @@
             }
             
             // Save data
-            saveInterviewData();
-            
-            // Stop camera
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            
-            showSection('results');
-        }
-
-        // Save interview data
-        async function saveInterviewData() {
-            const finalData = {
-                candidate: candidateData,
-                interview: {
-                    totalQuestions: selectedQuestions.length,
-                    questionsAnswered: interviewAnswers.length,
-                    completionTime: new Date().toISOString(),
-                    duration: getInterviewDuration()
-                },
-                answers: interviewAnswers.map(answer => ({
-                    questionNumber: answer.questionNumber,
-                    question: answer.question,
-                    category: answer.category,
-                    difficulty: answer.difficulty,
