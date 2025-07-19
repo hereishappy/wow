@@ -75,7 +75,7 @@
             font-size: 1.1rem;
         }
 
-        input[type="text"], input[type="tel"] {
+        input[type="text"], input[type="tel"], input[type="email"] {
             width: 100%;
             padding: 15px;
             border: 2px solid #ddd;
@@ -84,7 +84,7 @@
             transition: border-color 0.3s;
         }
 
-        input[type="text"]:focus, input[type="tel"]:focus {
+        input[type="text"]:focus, input[type="tel"]:focus, input[type="email"]:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
@@ -342,7 +342,6 @@
         </div>
 
         <div class="content">
-            <!-- Registration Section -->
             <div class="section active" id="registration">
                 <h2 style="text-align: center; margin-bottom: 30px; color: #333;">उम्मीदवार पंजीकरण</h2>
                 <form id="candidateForm">
@@ -355,8 +354,16 @@
                         <input type="tel" id="mobile" name="mobile" required>
                     </div>
                     <div class="form-group">
+                        <label for="email">ईमेल आईडी</label>
+                        <input type="email" id="email" name="email">
+                    </div>
+                    <div class="form-group">
                         <label for="experience">स्कैफोल्डिंग अनुभव (वर्षों में)</label>
                         <input type="text" id="experience" name="experience" placeholder="उदाहरण: 2 साल">
+                    </div>
+                    <div class="form-group">
+                        <label for="location">कार्य स्थान</label>
+                        <input type="text" id="location" name="location" placeholder="उदाहरण: मुंबई, दिल्ली">
                     </div>
                     <div style="text-align: center;">
                         <button type="submit" class="btn">इंटरव्यू शुरू करें</button>
@@ -364,7 +371,6 @@
                 </form>
             </div>
 
-            <!-- Interview Section -->
             <div class="section" id="interview">
                 <div class="permission-note">
                     <strong>महत्वपूर्ण:</strong> इंटरव्यू के लिए कैमरा और माइक्रोफोन की अनुमति दें। प्रश्न पूछने के बाद रिकॉर्डिंग अपने आप शुरू हो जाएगी।
@@ -404,415 +410,550 @@
                 </div>
             </div>
 
-            <!-- Results Section -->
             <div class="section" id="results">
                 <div class="result-container">
                     <div class="sync-status" id="syncStatus">
-                        <span>📊 डेटा Google Sheet "HAPPY SCREENING" में सेव हो रहा है...</span>
+                        <span>📊 डेटा Google Sheet में सेव हो रहा है...</span>
                     </div>
                     <div class="result-icon">🎉</div>
                     <div class="result-text">बधाई हो! आपका स्कैफोल्डिंग सुरक्षा इंटरव्यू पूरा हो गया है।</div>
-                    <p style="margin-bottom: 20px;">आपके सभी जवाब सुरक्षित रूप से रिकॉर्ड हो गए हैं और Google Sheet "HAPPY SCREENING" में सेव हो गए हैं।</p>
+                    <p style="margin-bottom: 20px;">आपके सभी जवाब सुरक्षित रूप से रिकॉर्ड हो गए हैं और Google Sheet में सेव हो गए हैं।</p>
                     <button class="btn" onclick="restartInterview()">नया इंटरव्यू शुरू करें</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // Updated Google Script URL - Your actual web app URL
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNLoFPn08HFfrI0dXmd5STxKLuPXSf3FNfUNvi5PsyfxPPTbS5Z-CeNXHb4I1f82jTjA/exec';
-        const SHEET_NAME = 'HAPPY SCREENING';
+<script>
+    // IMPORTANT: Replace this with your Google Apps Script Web App URL
+    // This URL will be used to send data (including links to recordings) to your Google Sheet.
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec';
 
-        // Global variables
-        let currentQuestion = 0;
-        let candidateData = {};
-        let mediaRecorder;
-        let recordedChunks = [];
-        let isRecording = false;
-        let stream;
-        let interviewAnswers = [];
-        let recordingTimer;
-        let recordingStartTime;
-        let currentSpeechUtterance;
-        let interviewStartTime;
+    // Global variables
+    let currentQuestion = 0;
+    let candidateData = {};
+    let mediaRecorder;
+    let recordedChunks = [];
+    let isRecording = false;
+    let stream;
+    let interviewAnswers = [];
+    let recordingTimer;
+    let recordingStartTime;
+    let currentSpeechUtterance;
+    let hindiVoice = null; // To store the selected Hindi voice
 
-        // Comprehensive scaffolding safety questions with categories
-        const scaffoldingQuestions = [
-            // Basic Knowledge
-            {
-                question: "स्कैफोल्डिंग क्या होता है और इसका मुख्य उद्देश्य क्या है?",
-                category: "बुनियादी जानकारी",
-                difficulty: "easy"
-            },
-            {
-                question: "स्कैफोल्डिंग के मुख्य पार्ट्स कौन से हैं? कम से कम 5 नाम बताइए।",
-                category: "बुनियादी जानकारी",
-                difficulty: "medium"
-            },
-            {
-                question: "कप्लोक स्कैफोल्डिंग सिस्टम क्या है और यह दूसरे सिस्टम से कैसे अलग है?",
-                category: "बुनियादी जानकारी",
-                difficulty: "medium"
-            },
-            
-            // Components and Parts
-            {
-                question: "बेस प्लेट और सोल प्लेट के बीच क्या अंतर है? दोनों का साइज़ बताइए।",
-                category: "कंपोनेंट्स",
-                difficulty: "medium"
-            },
-            {
-                question: "लेजर्स और ट्रांसोम का क्या काम है? इनके बिना स्कैफोल्डिंग क्यों अधूरी है?",
-                category: "कंपोनेंट्स",
-                difficulty: "medium"
-            },
-            {
-                question: "ब्रेसिंग के कितने प्रकार होते हैं और हर एक का क्या काम है?",
-                category: "कंपोनेंट्स",
-                difficulty: "hard"
-            },
-            
-            // Safety Measures
-            {
-                question: "ऊंचाई पर काम करते समय कौन से PPE ज़रूरी हैं? विस्तार से बताइए।",
-                category: "सुरक्षा उपाय",
-                difficulty: "medium"
-            },
-            {
-                question: "टो बोर्ड का साइज़ क्या होता है और यह क्यों ज़रूरी है?",
-                category: "सुरक्षा उपाय",
-                difficulty: "easy"
-            },
-            {
-                question: "गार्ड रेल सिस्टम में कौन से parts होते हैं और उनकी height क्या होनी चाहिए?",
-                category: "सुरक्षा उपाय",
-                difficulty: "hard"
-            },
-            
-            // Inspection and Safety
-            {
-                question: "स्कैफोल्डिंग का inspection कब और कैसे करना चाहिए? मुख्य चेक पॉइंट्स बताइए।",
-                category: "निरीक्षण",
-                difficulty: "hard"
-            },
-            {
-                question: "स्कैफोल्डिंग में तीन रंग के टैग का क्या मतलब है - Green, Yellow और Red?",
-                category: "निरीक्षण",
-                difficulty: "medium"
-            },
-            {
-                question: "किन परिस्थितियों में स्कैफोल्डिंग का निर्माण नहीं करना चाहिए?",
-                category: "निरीक्षण",
-                difficulty: "medium"
-            },
-            
-            // Emergency and Hazards
-            {
-                question: "स्कैफोल्डिंग work के दौरान कौन से मुख्य hazards हो सकते हैं?",
-                category: "आपातकाल",
-                difficulty: "medium"
-            },
-            {
-                question: "यदि स्कैफोल्डिंग में कोई कमी या damage दिखे तो तुरंत क्या action लेना चाहिए?",
-                category: "आपातकाल",
-                difficulty: "medium"
-            },
-            {
-                question: "Fall protection system कब और कैसे use करना चाहिए? Lifeline क्या है?",
-                category: "आपातकाल",
-                difficulty: "hard"
-            }
-        ];
-
-        // Utility functions
-        function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-            document.getElementById(sectionId).classList.add('active');
+    // Comprehensive scaffolding safety questions with categories
+    const scaffoldingQuestions = [
+        // Basic Knowledge
+        {
+            question: "स्कैफोल्डिंग क्या होता है और इसका मुख्य उद्देश्य क्या है?",
+            category: "बुनियादी जानकारी",
+            difficulty: "easy"
+        },
+        {
+            question: "स्कैफोल्डिंग के मुख्य पार्ट्स कौन से हैं? कम से कम 5 नाम बताइए।",
+            category: "बुनियादी जानकारी",
+            difficulty: "medium"
+        },
+        {
+            question: "कप्लोक स्कैफोल्डिंग सिस्टम क्या है और यह दूसरे सिस्टम से कैसे अलग है?",
+            category: "बुनियादी जानकारी",
+            difficulty: "medium"
+        },
+        
+        // Components and Parts
+        {
+            question: "बेस प्लेट और सोल प्लेट के बीच क्या अंतर है? दोनों का साइज़ बताइए।",
+            category: "कंपोनेंट्स",
+            difficulty: "medium"
+        },
+        {
+            question: "लेजर्स और ट्रांसोम का क्या काम है? इनके बिना स्कैफोल्डिंग क्यों अधूरी है?",
+            category: "कंपोनेंट्स",
+            difficulty: "medium"
+        },
+        {
+            question: "ब्रेसिंग के कितने प्रकार होते हैं और हर एक का क्या काम है?",
+            category: "कंपोनेंट्स",
+            difficulty: "hard"
+        },
+        
+        // Safety Measures
+        {
+            question: "ऊंचाई पर काम करते समय कौन से PPE ज़रूरी हैं? विस्तार से बताइए।",
+            category: "सुरक्षा उपाय",
+            difficulty: "medium"
+        },
+        {
+            question: "टो बोर्ड का साइज़ क्या होता है और यह क्यों ज़रूरी है?",
+            category: "सुरक्षा उपाय",
+            difficulty: "easy"
+        },
+        {
+            question: "गार्ड रेल सिस्टम में कौन से parts होते हैं और उनकी height क्या होनी चाहिए?",
+            category: "सुरक्षा उपाय",
+            difficulty: "hard"
+        },
+        
+        // Inspection and Safety
+        {
+            question: "स्कैफोल्डिंग का inspection कब और कैसे करना चाहिए? मुख्य चेक पॉइंट्स बताइए।",
+            category: "निरीक्षण",
+            difficulty: "hard"
+        },
+        {
+            question: "स्कैफोल्डिंग में तीन रंग के टैग का क्या मतलब है - Green, Yellow और Red?",
+            category: "निरीक्षण",
+            difficulty: "medium"
+        },
+        {
+            question: "किन परिस्थितियों में स्कैफोल्डिंग का निर्माण नहीं करना चाहिए?",
+            category: "निरीक्षण",
+            difficulty: "medium"
+        },
+        
+        // Emergency and Hazards
+        {
+            question: "स्कैफोल्डिंग work के दौरान कौन से मुख्य hazards हो सकते हैं?",
+            category: "आपातकाल",
+            difficulty: "medium"
+        },
+        {
+            question: "यदि स्कैफोल्डिंग में कोई कमी या damage दिखे तो तुरंत क्या action लेना चाहिए?",
+            category: "आपातकाल",
+            difficulty: "medium"
+        },
+        {
+            question: "Fall protection system कब और कैसे use करना चाहिए? Lifeline क्या है?",
+            category: "आपातकाल",
+            difficulty: "hard"
         }
+    ];
 
-        // Shuffle array function
-        function shuffleArray(array) {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled;
+    // Shuffle array function
+    function shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
+        return shuffled;
+    }
 
-        // Get randomized questions
-        const selectedQuestions = shuffleArray(scaffoldingQuestions);
+    // Get randomized questions
+    const selectedQuestions = shuffleArray(scaffoldingQuestions);
 
-        // Send data to Google Sheets
-        async function sendToGoogleSheets(data) {
-            const syncStatusEl = document.getElementById('syncStatus');
-            
-            try {
-                syncStatusEl.innerHTML = `<span>📊 डेटा Google Sheet "${SHEET_NAME}" में सेव हो रहा है...</span>`;
-                
-                // Add sheet name to the data
-                const dataWithSheet = {
-                    ...data,
-                    sheetName: SHEET_NAME
-                };
-                
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(dataWithSheet)
-                });
-                
-                // Since mode is 'no-cors', we can't read the response
-                // We'll assume success if no error is thrown
-                syncStatusEl.innerHTML = `<span>✅ डेटा सफलतापूर्वक Google Sheet "${SHEET_NAME}" में सेव हो गया!</span>`;
-                syncStatusEl.classList.add('success');
-                
-            } catch (error) {
-                console.error('Error sending to Google Sheets:', error);
-                syncStatusEl.innerHTML = `<span>❌ Google Sheet "${SHEET_NAME}" में डेटा सेव करने में समस्या आई। कृपया दोबारा कोशिश करें।</span>`;
-                syncStatusEl.classList.add('error');
-            }
-        }
-
-        // Form submission
-        document.getElementById('candidateForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            candidateData = {
-                name: document.getElementById('name').value,
-                mobile: document.getElementById('mobile').value,
-                experience: document.getElementById('experience').value,
-                timestamp: new Date().toISOString(),
-                interviewId: 'SCAFFOLD_' + Date.now()
-            };
-
-            showSection('interview');
-            setupCamera();
+    // Function to switch visible sections
+    function showSection(id) {
+        document.querySelectorAll('.section').forEach(section => {
+            section.classList.remove('active');
         });
+        document.getElementById(id).classList.add('active');
+    }
 
-        // Setup camera
-        async function setupCamera() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: true, 
-                    audio: true 
-                });
-                
-                const videoElement = document.getElementById('videoElement');
-                videoElement.srcObject = stream;
-                
-                document.getElementById('statusText').textContent = 'कैमरा तैयार है - इंटरव्यू शुरू करें';
-                document.getElementById('startBtn').style.display = 'block';
-                
-            } catch (err) {
-                console.error('Camera access error:', err);
-                document.getElementById('statusText').textContent = 'कैमरा एक्सेस में समस्या - कृपया अनुमति दें';
-            }
-        }
+    // Send data to Google Sheets
+    async function sendToGoogleSheets(data) {
+        const syncStatusEl = document.getElementById('syncStatus');
+        
+        try {
+            syncStatusEl.innerHTML = '<span>📊 डेटा Google Sheet में सेव हो रहा है...</span>';
+            syncStatusEl.classList.remove('success', 'error'); // Reset classes
 
-        // Start interview
-        function startInterview() {
-            document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('nextBtn').style.display = 'block';
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // 'no-cors' means you won't be able to read the response from Apps Script
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
             
-            currentQuestion = 0;
-            interviewStartTime = Date.now();
-            showQuestion();
-            updateProgress();
-        }
-
-        // Show current question
-        function showQuestion() {
-            if (currentQuestion < selectedQuestions.length) {
-                const questionData = selectedQuestions[currentQuestion];
-                
-                document.getElementById('questionCounter').textContent = `प्रश्न ${currentQuestion + 1}/${selectedQuestions.length}`;
-                document.getElementById('questionText').textContent = questionData.question;
-                document.getElementById('categoryBadge').textContent = questionData.category;
-                
-                // Category colors
-                const categoryColors = {
-                    'बुनियादी जानकारी': '#28a745',
-                    'कंपोनेंट्स': '#007bff',
-                    'सुरक्षा उपाय': '#ffc107',
-                    'निरीक्षण': '#17a2b8',
-                    'आपातकाल': '#dc3545'
-                };
-                
-                document.getElementById('categoryBadge').style.background = 
-                    categoryColors[questionData.category] || '#28a745';
-                
-                // Show AI speaking indicator
-                document.getElementById('aiSpeaking').style.display = 'block';
-                document.getElementById('recordingTimer').style.display = 'none';
-                
-                // Stop any ongoing recording
-                if (isRecording) {
-                    stopRecording();
-                }
-                
-                // Speak question and auto-start recording
-                speakQuestionAndRecord(questionData.question);
-                
-            } else {
-                completeInterview();
-            }
-        }
-
-        // Text-to-speech and auto-start recording
-        function speakQuestionAndRecord(text) {
-            if ('speechSynthesis' in window) {
-                // Stop any ongoing speech
-                window.speechSynthesis.cancel();
-                
-                currentSpeechUtterance = new SpeechSynthesisUtterance(text);
-                currentSpeechUtterance.lang = 'hi-IN';
-                currentSpeechUtterance.rate = 0.7;
-                currentSpeechUtterance.pitch = 1.0;
-                
-                // Auto-start recording when speech ends
-                currentSpeechUtterance.onend = function() {
-                    document.getElementById('aiSpeaking').style.display = 'none';
-                    setTimeout(() => {
-                        startRecording();
-                    }, 1000);
-                };
-                
-                window.speechSynthesis.speak(currentSpeechUtterance);
-            } else {
-                // Fallback if TTS not supported
-                document.getElementById('aiSpeaking').style.display = 'none';
-                setTimeout(() => {
-                    startRecording();
-                }, 2000);
-            }
-        }
-
-        // Start recording
-        function startRecording() {
-            if (isRecording) return;
+            // Since mode is 'no-cors', we can't read the response directly.
+            // We'll assume success if the fetch operation completes without a network error.
+            syncStatusEl.innerHTML = '<span>✅ डेटा सफलतापूर्वक Google Sheet "HAPPY SCREENING" में सेव हो गया! (यह प्रतिक्रिया केवल क्लाइंट-साइड अनुमान है)</span>';
+            syncStatusEl.classList.add('success');
             
-            recordedChunks = [];
+        } catch (error) {
+            console.error('Error sending to Google Sheets:', error);
+            syncStatusEl.innerHTML = '<span>❌ Google Sheet में डेटा सेव करने में समस्या आई। कृपया दोबारा कोशिश करें।</span>';
+            syncStatusEl.classList.add('error');
+        }
+    }
+
+    // Form submission
+    document.getElementById('candidateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        candidateData = {
+            name: document.getElementById('name').value,
+            mobile: document.getElementById('mobile').value,
+            email: document.getElementById('email').value,
+            experience: document.getElementById('experience').value,
+            location: document.getElementById('location').value,
+            timestamp: new Date().toISOString(),
+            interviewId: 'SCAFFOLD_' + Date.now()
+        };
+
+        showSection('interview');
+        setupCamera();
+    });
+
+    // Setup camera
+    async function setupCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: true, 
+                audio: true 
+            });
             
-            mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.ondataavailable = function(event) {
-                if (event.data.size > 0) {
-                    recordedChunks.push(event.data);
+            const videoElement = document.getElementById('videoElement');
+            videoElement.srcObject = stream;
+            
+            document.getElementById('statusText').textContent = 'कैमरा तैयार है - इंटरव्यू शुरू करें';
+            document.getElementById('startBtn').style.display = 'block';
+
+            // Populate voices for TTS as soon as they are available
+            window.speechSynthesis.onvoiceschanged = () => {
+                const voices = window.speechSynthesis.getVoices();
+                hindiVoice = voices.find(voice => voice.lang === 'hi-IN' || voice.lang.startsWith('hi'));
+                if (!hindiVoice) {
+                    console.warn("Hindi voice not found, falling back to default voice.");
                 }
             };
+            // Ensure voices are loaded if already changed before event listener was set up
+            if (window.speechSynthesis.getVoices().length > 0) {
+                 const voices = window.speechSynthesis.getVoices();
+                 hindiVoice = voices.find(voice => voice.lang === 'hi-IN' || voice.lang.startsWith('hi'));
+            }
             
-            mediaRecorder.onstop = function() {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                console.log('Recording saved', blob);
-                
-                // Save answer data
-                interviewAnswers.push({
-                    questionNumber: currentQuestion + 1,
-                    question: selectedQuestions[currentQuestion].question,
-                    category: selectedQuestions[currentQuestion].category,
-                    difficulty: selectedQuestions[currentQuestion].difficulty,
-                    recordingBlob: blob,
-                    recordingDuration: getRecordingDuration(),
-                    timestamp: new Date().toISOString()
-                });
+        } catch (err) {
+            console.error('Camera access error:', err);
+            document.getElementById('statusText').textContent = 'कैमरा एक्सेस में समस्या - कृपया अनुमति दें';
+            // Disable start button if camera access fails
+            document.getElementById('startBtn').disabled = true;
+        }
+    }
+
+    // Start interview
+    function startInterview() {
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('nextBtn').style.display = 'block';
+        
+        currentQuestion = 0;
+        showQuestion();
+        updateProgress();
+    }
+
+    // Show current question
+    function showQuestion() {
+        if (currentQuestion < selectedQuestions.length) {
+            const questionData = selectedQuestions[currentQuestion];
+            
+            document.getElementById('questionCounter').textContent = `प्रश्न ${currentQuestion + 1}/${selectedQuestions.length}`;
+            document.getElementById('questionText').textContent = questionData.question;
+            document.getElementById('categoryBadge').textContent = questionData.category;
+            
+            // Category colors
+            const categoryColors = {
+                'बुनियादी जानकारी': '#28a745',
+                'कंपोनेंट्स': '#007bff',
+                'सुरक्षा उपाय': '#ffc107',
+                'निरीक्षण': '#17a2b8',
+                'आपातकाल': '#dc3545'
             };
             
-            mediaRecorder.start();
-            isRecording = true;
-            recordingStartTime = Date.now();
+            document.getElementById('categoryBadge').style.background = 
+                categoryColors[questionData.category] || '#28a745';
             
-            // Show recording UI
-            document.getElementById('recordingTimer').style.display = 'block';
-            document.getElementById('statusText').textContent = 'रिकॉर्डिंग चल रही है - अपना विस्तृत जवाब दें';
-            document.getElementById('statusDot').classList.add('recording');
+            // Show AI speaking indicator
+            document.getElementById('aiSpeaking').style.display = 'block';
+            document.getElementById('recordingTimer').style.display = 'none';
             
-            // Start timer
-            startRecordingTimer();
-        }
-
-        // Stop recording
-        function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-                isRecording = false;
-                
-                // Hide recording UI
-                document.getElementById('recordingTimer').style.display = 'none';
-                document.getElementById('statusText').textContent = 'जवाब रिकॉर्ड हो गया - अगला प्रश्न के लिए तैयार';
-                document.getElementById('statusDot').classList.remove('recording');
-                
-                // Stop timer
-                if (recordingTimer) {
-                    clearInterval(recordingTimer);
-                }
-            }
-        }
-
-        // Start recording timer
-        function startRecordingTimer() {
-            recordingTimer = setInterval(() => {
-                const elapsed = Date.now() - recordingStartTime;
-                const minutes = Math.floor(elapsed / 60000);
-                const seconds = Math.floor((elapsed % 60000) / 1000);
-                document.getElementById('timerDisplay').textContent = 
-                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        // Get recording duration
-        function getRecordingDuration() {
-            if (recordingStartTime) {
-                return Date.now() - recordingStartTime;
-            }
-            return 0;
-        }
-
-        // Get interview duration
-        function getInterviewDuration() {
-            if (interviewStartTime) {
-                return Date.now() - interviewStartTime;
-            }
-            return 0;
-        }
-
-        // Next question
-        function nextQuestion() {
-            if (isRecording) {
-                stopRecording();
-            }
-            
-            // Stop any ongoing speech
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
-            }
-            
-            currentQuestion++;
-            showQuestion();
-            updateProgress();
-        }
-
-        // Update progress bar
-        function updateProgress() {
-            const progress = ((currentQuestion + 1) / selectedQuestions.length) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-        }
-
-        // Complete interview
-        function completeInterview() {
             // Stop any ongoing recording
             if (isRecording) {
                 stopRecording();
             }
             
+            // Speak question and auto-start recording
+            speakQuestionAndRecord(questionData.question);
+            
+        } else {
+            completeInterview();
+        }
+    }
+
+    // Text-to-speech and auto-start recording
+    function speakQuestionAndRecord(text) {
+        if ('speechSynthesis' in window) {
             // Stop any ongoing speech
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
+            window.speechSynthesis.cancel();
+            
+            currentSpeechUtterance = new SpeechSynthesisUtterance(text);
+            currentSpeechUtterance.lang = 'hi-IN';
+            currentSpeechUtterance.rate = 0.7;
+            currentSpeechUtterance.pitch = 1.0;
+
+            // Set Hindi voice if found
+            if (hindiVoice) {
+                currentSpeechUtterance.voice = hindiVoice;
             }
             
-            // Save data
+            // Auto-start recording when speech ends
+            currentSpeechUtterance.onend = function() {
+                document.getElementById('aiSpeaking').style.display = 'none';
+                setTimeout(() => {
+                    startRecording();
+                }, 1000); // 1-second delay before recording starts
+            };
+            
+            window.speechSynthesis.speak(currentSpeechUtterance);
+        } else {
+            // Fallback if TTS not supported
+            document.getElementById('aiSpeaking').style.display = 'none';
+            setTimeout(() => {
+                startRecording();
+            }, 2000); // Longer delay if no TTS
+        }
+    }
+
+    // Start recording
+    function startRecording() {
+        if (isRecording || !stream) return; // Prevent multiple recordings or if stream not available
+        
+        recordedChunks = [];
+        
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = function(event) {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+        
+        mediaRecorder.onstop = function() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            console.log('Recording saved:', blob);
+            
+            // Save answer data (including the blob for later upload)
+            interviewAnswers.push({
+                questionNumber: currentQuestion + 1,
+                question: selectedQuestions[currentQuestion].question,
+                category: selectedQuestions[currentQuestion].category,
+                difficulty: selectedQuestions[currentQuestion].difficulty,
+                recordingBlob: blob, // Store the blob directly
+                recordingDuration: getRecordingDuration(),
+                timestamp: new Date().toISOString()
+            });
+        };
+        
+        mediaRecorder.start();
+        isRecording = true;
+        recordingStartTime = Date.now();
+        
+        // Show recording UI
+        document.getElementById('recordingTimer').style.display = 'block';
+        document.getElementById('statusText').textContent = 'रिकॉर्डिंग चल रही है - अपना विस्तृत जवाब दें';
+        document.getElementById('statusDot').classList.add('recording');
+        
+        // Start timer
+        startRecordingTimer();
+    }
+
+    // Stop recording
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            isRecording = false;
+            
+            // Hide recording UI
+            document.getElementById('recordingTimer').style.display = 'none';
+            document.getElementById('statusText').textContent = 'जवाब रिकॉर्ड हो गया - अगला प्रश्न के लिए तैयार';
+            document.getElementById('statusDot').classList.remove('recording');
+            
+            // Stop timer
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+            }
+        }
+    }
+
+    // Start recording timer
+    function startRecordingTimer() {
+        recordingTimer = setInterval(() => {
+            const elapsed = Date.now() - recordingStartTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('timerDisplay').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    // Get recording duration
+    function getRecordingDuration() {
+        if (recordingStartTime) {
+            return Date.now() - recordingStartTime;
+        }
+        return 0;
+    }
+
+    // Next question
+    function nextQuestion() {
+        if (isRecording) {
+            stopRecording(); // Stop recording for the current question before moving to the next
+        }
+        
+        // Stop any ongoing speech
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+        
+        currentQuestion++;
+        showQuestion();
+        updateProgress();
+    }
+
+    // Complete interview
+    function completeInterview() {
+        // Stop any ongoing recording
+        if (isRecording) {
+            stopRecording();
+        }
+        
+        // Stop any ongoing speech
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+        
+        // Save data (this will now include handling the blobs)
+        saveInterviewData();
+        
+        // Stop camera and microphone tracks
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        
+        showSection('results');
+    }
+
+    // Save interview data and prepare for Google Sheets upload
+    async function saveInterviewData() {
+        const syncStatusEl = document.getElementById('syncStatus');
+        syncStatusEl.innerHTML = '<span>📊 डेटा Google Sheet में सेव हो रहा है...</span>';
+        syncStatusEl.classList.remove('success', 'error');
+
+        const answersWithLinks = [];
+
+        // Loop through each recorded answer and upload its blob to Google Drive
+        // This part needs a Google Apps Script function on the backend to handle the file upload.
+        for (const answer of interviewAnswers) {
+            let videoLink = "N/A"; // Default if upload fails
+
+            if (answer.recordingBlob) {
+                try {
+                    // Convert blob to base64 for sending via JSON to Apps Script
+                    const base64Data = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]); // Get base64 part
+                        reader.onerror = reject;
+                        reader.readAsDataURL(answer.recordingBlob);
+                    });
+
+                    // Send the base64 data to Apps Script to save to Google Drive
+                    // Your Google Apps Script function will need to accept this data,
+                    // decode it, and save it to Google Drive, then return the file URL.
+                    const uploadResponse = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'cors', // Use 'cors' if your Apps Script is configured for it, or 'no-cors' if not
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'uploadFile', // Action for your Apps Script to identify
+                            fileName: `${candidateData.interviewId}_Q${answer.questionNumber}.webm`,
+                            mimeType: answer.recordingBlob.type,
+                            base64Data: base64Data,
+                            folderId: 'YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE' // IMPORTANT: Specify a folder ID for recordings
+                        })
+                    });
+
+                    // If mode is 'cors', you can read the response
+                    if (uploadResponse.ok) {
+                        const result = await uploadResponse.json();
+                        if (result && result.fileUrl) {
+                            videoLink = result.fileUrl;
+                        } else {
+                            console.error("File upload failed:", result);
+                            syncStatusEl.innerHTML = '<span>❌ कुछ रिकॉर्डिंग अपलोड नहीं हो पाईं।</span>';
+                            syncStatusEl.classList.add('error');
+                        }
+                    } else {
+                         console.error("File upload failed with status:", uploadResponse.status);
+                         syncStatusEl.innerHTML = '<span>❌ कुछ रिकॉर्डिंग अपलोड नहीं हो पाईं।</span>';
+                         syncStatusEl.classList.add('error');
+                    }
+                } catch (error) {
+                    console.error("Error uploading recording:", error);
+                    syncStatusEl.innerHTML = '<span>❌ कुछ रिकॉर्डिंग अपलोड नहीं हो पाईं।</span>';
+                    syncStatusEl.classList.add('error');
+                }
+            }
+
+            // Prepare data for Google Sheet
+            answersWithLinks.push({
+                questionNumber: answer.questionNumber,
+                question: answer.question,
+                category: answer.category,
+                difficulty: answer.difficulty,
+                recordingDuration: (answer.recordingDuration / 1000).toFixed(1) + 's', // Convert ms to seconds
+                recordingLink: videoLink,
+                timestamp: answer.timestamp
+            });
+        }
+
+        const finalData = {
+            candidate: candidateData,
+            answers: answersWithLinks
+        };
+
+        // Send all collected data (including recording links) to Google Sheet
+        sendToGoogleSheets(finalData);
+    }
+
+    // Restart interview
+    function restartInterview() {
+        // Clear all data
+        currentQuestion = 0;
+        candidateData = {};
+        interviewAnswers = [];
+        recordedChunks = [];
+        isRecording = false;
+        if (recordingTimer) clearInterval(recordingTimer);
+        
+        // Reset UI
+        document.getElementById('candidateForm').reset();
+        document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('questionText').textContent = 'इंटरव्यू शुरू करने के लिए तैयार हो जाइए...';
+        document.getElementById('questionCounter').textContent = 'प्रश्न 1/15';
+        document.getElementById('categoryBadge').textContent = 'बुनियादी जानकारी';
+        document.getElementById('statusText').textContent = 'तैयार हो रहा है...';
+        document.getElementById('statusDot').classList.remove('recording');
+        document.getElementById('startBtn').style.display = 'block';
+        document.getElementById('startBtn').disabled = false; // Re-enable if disabled previously
+        document.getElementById('nextBtn').style.display = 'none';
+        document.getElementById('aiSpeaking').style.display = 'none';
+        document.getElementById('recordingTimer').style.display = 'none';
+        document.getElementById('syncStatus').innerHTML = '<span>📊 डेटा Google Sheet में सेव हो रहा है...</span>';
+        document.getElementById('syncStatus').classList.remove('success', 'error');
+
+        // Show registration section
+        showSection('registration');
+    }
+
+    // Initial setup on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        showSection('registration'); // Ensure registration is the first section
+        // No need to setupCamera here, as it's called after form submission
+    });
+
+</script>
+</body>
+</html>
