@@ -606,9 +606,7 @@
             submitInterviewData(); // Trigger data submission
         }
 
-        // --- Data Submission (Placeholder for Google Sheet Integration) ---
-        // This function simulates data submission to Google Sheets.
-        // For actual functionality, a backend server or Google Apps Script is required.
+        // --- Data Submission to Google Apps Script ---
         async function submitInterviewData() {
             // Initial status message for data saving
             syncStatus.innerHTML = '<span>📊 डेटा Google Sheet में सेव हो रहा है...</span>';
@@ -625,36 +623,34 @@
 
             console.log("Google Sheet में सबमिट करने के लिए डेटा:", dataToSubmit);
 
-            // --- IMPORTANT: Placeholder for actual Google Sheet API call ---
-            // To actually submit this data to a Google Sheet:
-            // 1.  You would need a backend server (e.g., Node.js, Python Flask/Django)
-            //     or Google Apps Script. This is crucial for security as direct client-side
-            //     API calls would expose your API keys.
-            // 2.  This backend would receive `dataToSubmit` from this frontend.
-            // 3.  The backend would then use the Google Sheets API (with a Service Account for authentication)
-            //     to append this data to your specified Google Sheet.
-            // 4.  The backend logic should ensure the target sheet is named "HAPPY SCREENING".
-            //     It would check if "HAPPY SCREENING" tab exists, create it if not,
-            //     and then append the data.
+            // Google Apps Script Web App URL
+            const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbyNLoFPn08HFfrI0dXmd5STxKLuPXSf3FNfUNvi5PsyfxPPTbS5Z-CeNXHb4I1f82jTjA/exec';
+            const sheetName = 'HAPPY SCREENING'; // The user specified this tab name
 
-            // Example of how a fetch request *would* look to a backend endpoint:
-            /*
             try {
-                const response = await fetch('/api/submit-interview-data', { // Replace with your actual backend endpoint
+                const response = await fetch(appsScriptUrl, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded', // Apps Script usually expects this for doPost
                     },
-                    body: JSON.stringify(dataToSubmit),
+                    body: new URLSearchParams({ // URLSearchParams is good for x-www-form-urlencoded
+                        action: 'addRecord', // A common action parameter for Apps Script to identify the operation
+                        sheetName: sheetName,
+                        name: dataToSubmit.candidateName,
+                        phone: dataToSubmit.candidatePhone,
+                        status: dataToSubmit.interviewStatus,
+                        date: dataToSubmit.interviewDate
+                    }).toString(),
                 });
 
-                if (response.ok) {
+                const result = await response.json(); // Assuming Apps Script returns JSON
+
+                if (result.status === 'success') {
                     syncStatus.innerHTML = '<span>✅ डेटा सफलतापूर्वक Google Sheet में सेव हो गया है!</span>';
                     syncStatus.classList.add('success');
                 } else {
-                    const errorData = await response.json();
-                    console.error("Google Sheet सबमिशन त्रुटि:", errorData);
-                    syncStatus.innerHTML = `<span>❌ डेटा सेव करने में त्रुटि: ${errorData.message || 'अज्ञात त्रुटि'}</span>`;
+                    console.error("Google Sheet सबमिशन त्रुटि:", result.message || "अज्ञात त्रुटि");
+                    syncStatus.innerHTML = `<span>❌ डेटा सेव करने में त्रुटि: ${result.message || 'अज्ञात त्रुटि'}</span>`;
                     syncStatus.classList.add('error');
                 }
             } catch (error) {
@@ -662,13 +658,6 @@
                 syncStatus.innerHTML = '<span>❌ नेटवर्क त्रुटि: कृपया पुनः प्रयास करें।</span>';
                 syncStatus.classList.add('error');
             }
-            */
-
-            // Simulate successful submission for demonstration purposes
-            setTimeout(() => {
-                syncStatus.innerHTML = '<span>✅ डेटा सफलतापूर्वक Google Sheet में सेव हो गया है!</span>';
-                syncStatus.classList.add('success');
-            }, 2000); // Simulate a 2-second network delay
         }
 
         // --- Custom Message Box (Replaces alert()) ---
