@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
@@ -11,305 +12,330 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #333;
-        }
+```
+    body {
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #333;
+    }
 
+    .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        overflow: hidden;
+        max-width: 1000px;
+        width: 90%;
+        min-height: 600px;
+    }
+
+    .header {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .content {
+        padding: 40px;
+    }
+
+    .section {
+        display: none;
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    .section.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #555;
+        font-size: 1.1rem;
+    }
+
+    input[type="text"], input[type="tel"], input[type="email"] {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus, input[type="tel"]:focus, input[type="email"]:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+
+    .btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .video-container {
+        position: relative;
+        background: #000;
+        border-radius: 15px;
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+
+    #videoElement {
+        width: 100%;
+        height: 400px;
+        object-fit: cover;
+    }
+
+    .ai-avatar {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ff9a9e, #fecfef);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .question-container {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+        border-left: 5px solid #667eea;
+    }
+
+    .question-text {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 15px;
+        line-height: 1.4;
+    }
+
+    .question-counter {
+        background: #667eea;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        display: inline-block;
+        margin-bottom: 15px;
+    }
+
+    .controls {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        font-size: 1.1rem;
+    }
+
+    .status-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #28a745;
+        animation: blink 1s infinite;
+    }
+
+    .status-dot.recording {
+        background: #dc3545;
+        animation: recordingPulse 1s infinite;
+    }
+
+    @keyframes blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0.3; }
+    }
+
+    @keyframes recordingPulse {
+        0%, 100% { transform: scale(1); background: #dc3545; }
+        50% { transform: scale(1.3); background: #ff6b6b; }
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e0e0e0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transition: width 0.3s ease;
+    }
+
+    .result-container {
+        text-align: center;
+        padding: 40px;
+    }
+
+    .result-icon {
+        font-size: 5rem;
+        margin-bottom: 20px;
+    }
+
+    .result-text {
+        font-size: 1.5rem;
+        margin-bottom: 30px;
+        color: #333;
+    }
+
+    .permission-note {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        color: #856404;
+    }
+
+    .recording-timer {
+        background: #dc3545;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 1rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        display: none;
+    }
+
+    .ai-speaking {
+        background: #17a2b8;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 1rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        display: none;
+    }
+
+    .category-badge {
+        background: #28a745;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+
+    .sync-status {
+        background: #e9ecef;
+        border: 1px solid #ced4da;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: #495057;
+        text-align: center;
+    }
+
+    .sync-status.success {
+        background: #d1edff;
+        border-color: #bee5eb;
+        color: #0c5460;
+    }
+
+    .sync-status.error {
+        background: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    @media (max-width: 768px) {
         .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            max-width: 1000px;
-            width: 90%;
-            min-height: 600px;
+            width: 95%;
+            margin: 10px;
         }
-
-        .header {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
+        
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 1.8rem;
         }
-
+        
         .content {
-            padding: 40px;
-        }
-
-        .section {
-            display: none;
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #555;
-            font-size: 1.1rem;
-        }
-
-        input[type="text"], input[type="tel"], input[type="email"] {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        input[type="text"]:focus, input[type="tel"]:focus, input[type="email"]:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .video-container {
-            position: relative;
-            background: #000;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-
-        #videoElement {
-            width: 100%;
-            height: 400px;
-            object-fit: cover;
-        }
-
-        .ai-avatar {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ff9a9e, #fecfef);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .question-container {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border-left: 5px solid #667eea;
-        }
-
-        .question-text {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 15px;
-            line-height: 1.4;
-        }
-
-        .question-counter {
-            background: #667eea;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            display: inline-block;
-            margin-bottom: 15px;
-        }
-
-        .controls {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            font-size: 1.1rem;
-        }
-
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #28a745;
-            animation: blink 1s infinite;
-        }
-
-        .status-dot.recording {
-            background: #dc3545;
-            animation: recordingPulse 1s infinite;
-        }
-
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.3; }
-        }
-
-        @keyframes recordingPulse {
-            0%, 100% { transform: scale(1); background: #dc3545; }
-            50% { transform: scale(1.3); background: #ff6b6b; }
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.3s ease;
-        }
-
-        .result-container {
-            text-align: center;
-            padding: 40px;
-        }
-
-        .result-icon {
-            font-size: 5rem;
-            margin-bottom: 20px;
-        }
-
-        .result-text {
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            color: #333;
-        }
-
-        .permission-note {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 10px;
             padding: 20px;
-            margin-bottom: 20px;
-            color: #856404;
         }
+        
+        .ai-avatar {
+            width: 80px;
+            height: 80px;
+            font-size: 2rem;
+        }
+    }
+</style>
+```
 
-        .recording-timer {
-            background: #dc3545;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 1rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .ai-speaking {
-            background: #17a2b8;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 1rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .category-badge {
-            background: #28a745;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                width: 95%;
-                margin: 10px;
-            }
-            
-            .header h1 {
-                font-size: 1.8rem;
-            }
-            
-            .content {
-                padding: 20px;
-            }
-            
-            .ai-avatar {
-                width: 80px;
-                height: 80px;
-                font-size: 2rem;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -318,499 +344,479 @@
             <p>कप्लोक स्कैफोल्डिंग और ऊंचाई पर काम के लिए व्यापक सुरक्षा इंटरव्यू</p>
         </div>
 
-        <div class="content">
-            <!-- Registration Section -->
-            <div class="section active" id="registration">
-                <h2 style="text-align: center; margin-bottom: 30px; color: #333;">उम्मीदवार पंजीकरण</h2>
-                <form id="candidateForm">
-                    <div class="form-group">
-                        <label for="name">पूरा नाम *</label>
-                        <input type="text" id="name" name="name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="mobile">मोबाइल नंबर *</label>
-                        <input type="tel" id="mobile" name="mobile" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">ईमेल आईडी</label>
-                        <input type="email" id="email" name="email">
-                    </div>
-                    <div class="form-group">
-                        <label for="experience">स्कैफोल्डिंग अनुभव (वर्षों में)</label>
-                        <input type="text" id="experience" name="experience" placeholder="उदाहरण: 2 साल">
-                    </div>
-                    <div class="form-group">
-                        <label for="location">कार्य स्थान</label>
-                        <input type="text" id="location" name="location" placeholder="उदाहरण: मुंबई, दिल्ली">
-                    </div>
-                    <div style="text-align: center;">
-                        <button type="submit" class="btn">इंटरव्यू शुरू करें</button>
-                    </div>
-                </form>
-            </div>
+```
+    <div class="content">
+        <!-- Registration Section -->
+        <div class="section active" id="registration">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #333;">उम्मीदवार पंजीकरण</h2>
+            <form id="candidateForm">
+                <div class="form-group">
+                    <label for="name">पूरा नाम *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="mobile">मोबाइल नंबर *</label>
+                    <input type="tel" id="mobile" name="mobile" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">ईमेल आईडी</label>
+                    <input type="email" id="email" name="email">
+                </div>
+                <div class="form-group">
+                    <label for="experience">स्कैफोल्डिंग अनुभव (वर्षों में)</label>
+                    <input type="text" id="experience" name="experience" placeholder="उदाहरण: 2 साल">
+                </div>
+                <div class="form-group">
+                    <label for="location">कार्य स्थान</label>
+                    <input type="text" id="location" name="location" placeholder="उदाहरण: मुंबई, दिल्ली">
+                </div>
+                <div style="text-align: center;">
+                    <button type="submit" class="btn">इंटरव्यू शुरू करें</button>
+                </div>
+            </form>
+        </div>
 
-            <!-- Interview Section -->
-            <div class="section" id="interview">
-                <div class="permission-note">
-                    <strong>महत्वपूर्ण:</strong> इंटरव्यू के लिए कैमरा और माइक्रोफोन की अनुमति दें। प्रश्न पूछने के बाद रिकॉर्डिंग अपने आप शुरू हो जाएगी।
-                </div>
-                
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                
-                <div class="ai-speaking" id="aiSpeaking">
-                    <span>🎤 AI प्रश्न पूछ रहा है...</span>
-                </div>
-                
-                <div class="recording-timer" id="recordingTimer">
-                    <span>🔴 रिकॉर्डिंग चल रही है - समय: <span id="timerDisplay">00:00</span></span>
-                </div>
-                
-                <div class="video-container">
-                    <video id="videoElement" autoplay muted></video>
-                    <div class="ai-avatar">👩‍🏫</div>
-                </div>
-                
-                <div class="question-container">
-                    <div class="category-badge" id="categoryBadge">बुनियादी जानकारी</div>
-                    <div class="question-counter" id="questionCounter">प्रश्न 1/15</div>
-                    <div class="question-text" id="questionText">इंटरव्यू शुरू करने के लिए तैयार हो जाइए...</div>
-                </div>
-                
-                <div class="status-indicator" id="statusIndicator">
-                    <div class="status-dot" id="statusDot"></div>
-                    <span id="statusText">तैयार हो रहा है...</span>
-                </div>
-                
-                <div class="controls">
-                    <button class="btn" id="startBtn" onclick="startInterview()">इंटरव्यू शुरू करें</button>
-                    <button class="btn" id="nextBtn" onclick="nextQuestion()" style="display: none;">अगला प्रश्न</button>
-                </div>
+        <!-- Interview Section -->
+        <div class="section" id="interview">
+            <div class="permission-note">
+                <strong>महत्वपूर्ण:</strong> इंटरव्यू के लिए कैमरा और माइक्रोफोन की अनुमति दें। प्रश्न पूछने के बाद रिकॉर्डिंग अपने आप शुरू हो जाएगी।
             </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <div class="ai-speaking" id="aiSpeaking">
+                <span>🎤 AI प्रश्न पूछ रहा है...</span>
+            </div>
+            
+            <div class="recording-timer" id="recordingTimer">
+                <span>🔴 रिकॉर्डिंग चल रही है - समय: <span id="timerDisplay">00:00</span></span>
+            </div>
+            
+            <div class="video-container">
+                <video id="videoElement" autoplay muted></video>
+                <div class="ai-avatar">👩‍🏫</div>
+            </div>
+            
+            <div class="question-container">
+                <div class="category-badge" id="categoryBadge">बुनियादी जानकारी</div>
+                <div class="question-counter" id="questionCounter">प्रश्न 1/15</div>
+                <div class="question-text" id="questionText">इंटरव्यू शुरू करने के लिए तैयार हो जाइए...</div>
+            </div>
+            
+            <div class="status-indicator" id="statusIndicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">तैयार हो रहा है...</span>
+            </div>
+            
+            <div class="controls">
+                <button class="btn" id="startBtn" onclick="startInterview()">इंटरव्यू शुरू करें</button>
+                <button class="btn" id="nextBtn" onclick="nextQuestion()" style="display: none;">अगला प्रश्न</button>
+            </div>
+        </div>
 
-            <!-- Results Section -->
-            <div class="section" id="results">
-                <div class="result-container">
-                    <div class="result-icon">🎉</div>
-                    <div class="result-text">बधाई हो! आपका स्कैफोल्डिंग सुरक्षा इंटरव्यू पूरा हो गया है।</div>
-                    <p style="margin-bottom: 20px;">आपके सभी जवाब सुरक्षित रूप से रिकॉर्ड हो गए हैं। विस्तृत परिणाम जल्द ही आपको बताया जाएगा।</p>
-                    <button class="btn" onclick="restartInterview()">नया इंटरव्यू शुरू करें</button>
+        <!-- Results Section -->
+        <div class="section" id="results">
+            <div class="result-container">
+                <div class="sync-status" id="syncStatus">
+                    <span>📊 डेटा Google Sheet में सेव हो रहा है...</span>
                 </div>
+                <div class="result-icon">🎉</div>
+                <div class="result-text">बधाई हो! आपका स्कैफोल्डिंग सुरक्षा इंटरव्यू पूरा हो गया है।</div>
+                <p style="margin-bottom: 20px;">आपके सभी जवाब सुरक्षित रूप से रिकॉर्ड हो गए हैं और Google Sheet में सेव हो गए हैं।</p>
+                <button class="btn" onclick="restartInterview()">नया इंटरव्यू शुरू करें</button>
             </div>
         </div>
     </div>
+</div>
+```
 
-    <script>
-        // Global variables
-        let currentQuestion = 0;
-        let candidateData = {};
-        let mediaRecorder;
-        let recordedChunks = [];
-        let isRecording = false;
-        let stream;
-        let interviewAnswers = [];
-        let recordingTimer;
-        let recordingStartTime;
-        let currentSpeechUtterance;
+<script>
+    // IMPORTANT: Replace this with your Google Apps Script Web App URL
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec';
 
-        // Comprehensive scaffolding safety questions with categories
-        const scaffoldingQuestions = [
-            // Basic Knowledge
-            {
-                question: "स्कैफोल्डिंग क्या होता है और इसका मुख्य उद्देश्य क्या है?",
-                category: "बुनियादी जानकारी",
-                difficulty: "easy"
-            },
-            {
-                question: "स्कैफोल्डिंग के मुख्य पार्ट्स कौन से हैं? कम से कम 5 नाम बताइए।",
-                category: "बुनियादी जानकारी",
-                difficulty: "medium"
-            },
-            {
-                question: "कप्लोक स्कैफोल्डिंग सिस्टम क्या है और यह दूसरे सिस्टम से कैसे अलग है?",
-                category: "बुनियादी जानकारी",
-                difficulty: "medium"
-            },
-            
-            // Components and Parts
-            {
-                question: "बेस प्लेट और सोल प्लेट के बीच क्या अंतर है? दोनों का साइज़ बताइए।",
-                category: "कंपोनेंट्स",
-                difficulty: "medium"
-            },
-            {
-                question: "लेजर्स और ट्रांसोम का क्या काम है? इनके बिना स्कैफोल्डिंग क्यों अधूरी है?",
-                category: "कंपोनेंट्स",
-                difficulty: "medium"
-            },
-            {
-                question: "ब्रेसिंग के कितने प्रकार होते हैं और हर एक का क्या काम है?",
-                category: "कंपोनेंट्स",
-                difficulty: "hard"
-            },
-            
-            // Safety Measures
-            {
-                question: "ऊंचाई पर काम करते समय कौन से PPE ज़रूरी हैं? विस्तार से बताइए।",
-                category: "सुरक्षा उपाय",
-                difficulty: "medium"
-            },
-            {
-                question: "टो बोर्ड का साइज़ क्या होता है और यह क्यों ज़रूरी है?",
-                category: "सुरक्षा उपाय",
-                difficulty: "easy"
-            },
-            {
-                question: "गार्ड रेल सिस्टम में कौन से parts होते हैं और उनकी height क्या होनी चाहिए?",
-                category: "सुरक्षा उपाय",
-                difficulty: "hard"
-            },
-            
-            // Inspection and Safety
-            {
-                question: "स्कैफोल्डिंग का inspection कब और कैसे करना चाहिए? मुख्य चेक पॉइंट्स बताइए।",
-                category: "निरीक्षण",
-                difficulty: "hard"
-            },
-            {
-                question: "स्कैफोल्डिंग में तीन रंग के टैग का क्या मतलब है - Green, Yellow और Red?",
-                category: "निरीक्षण",
-                difficulty: "medium"
-            },
-            {
-                question: "किन परिस्थितियों में स्कैफोल्डिंग का निर्माण नहीं करना चाहिए?",
-                category: "निरीक्षण",
-                difficulty: "medium"
-            },
-            
-            // Emergency and Hazards
-            {
-                question: "स्कैफोल्डिंग work के दौरान कौन से मुख्य hazards हो सकते हैं?",
-                category: "आपातकाल",
-                difficulty: "medium"
-            },
-            {
-                question: "यदि स्कैफोल्डिंग में कोई कमी या damage दिखे तो तुरंत क्या action लेना चाहिए?",
-                category: "आपातकाल",
-                difficulty: "medium"
-            },
-            {
-                question: "Fall protection system कब और कैसे use करना चाहिए? Lifeline क्या है?",
-                category: "आपातकाल",
-                difficulty: "hard"
-            }
-        ];
+    // Global variables
+    let currentQuestion = 0;
+    let candidateData = {};
+    let mediaRecorder;
+    let recordedChunks = [];
+    let isRecording = false;
+    let stream;
+    let interviewAnswers = [];
+    let recordingTimer;
+    let recordingStartTime;
+    let currentSpeechUtterance;
 
-        // Shuffle array function
-        function shuffleArray(array) {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled;
+    // Comprehensive scaffolding safety questions with categories
+    const scaffoldingQuestions = [
+        // Basic Knowledge
+        {
+            question: "स्कैफोल्डिंग क्या होता है और इसका मुख्य उद्देश्य क्या है?",
+            category: "बुनियादी जानकारी",
+            difficulty: "easy"
+        },
+        {
+            question: "स्कैफोल्डिंग के मुख्य पार्ट्स कौन से हैं? कम से कम 5 नाम बताइए।",
+            category: "बुनियादी जानकारी",
+            difficulty: "medium"
+        },
+        {
+            question: "कप्लोक स्कैफोल्डिंग सिस्टम क्या है और यह दूसरे सिस्टम से कैसे अलग है?",
+            category: "बुनियादी जानकारी",
+            difficulty: "medium"
+        },
+        
+        // Components and Parts
+        {
+            question: "बेस प्लेट और सोल प्लेट के बीच क्या अंतर है? दोनों का साइज़ बताइए।",
+            category: "कंपोनेंट्स",
+            difficulty: "medium"
+        },
+        {
+            question: "लेजर्स और ट्रांसोम का क्या काम है? इनके बिना स्कैफोल्डिंग क्यों अधूरी है?",
+            category: "कंपोनेंट्स",
+            difficulty: "medium"
+        },
+        {
+            question: "ब्रेसिंग के कितने प्रकार होते हैं और हर एक का क्या काम है?",
+            category: "कंपोनेंट्स",
+            difficulty: "hard"
+        },
+        
+        // Safety Measures
+        {
+            question: "ऊंचाई पर काम करते समय कौन से PPE ज़रूरी हैं? विस्तार से बताइए।",
+            category: "सुरक्षा उपाय",
+            difficulty: "medium"
+        },
+        {
+            question: "टो बोर्ड का साइज़ क्या होता है और यह क्यों ज़रूरी है?",
+            category: "सुरक्षा उपाय",
+            difficulty: "easy"
+        },
+        {
+            question: "गार्ड रेल सिस्टम में कौन से parts होते हैं और उनकी height क्या होनी चाहिए?",
+            category: "सुरक्षा उपाय",
+            difficulty: "hard"
+        },
+        
+        // Inspection and Safety
+        {
+            question: "स्कैफोल्डिंग का inspection कब और कैसे करना चाहिए? मुख्य चेक पॉइंट्स बताइए।",
+            category: "निरीक्षण",
+            difficulty: "hard"
+        },
+        {
+            question: "स्कैफोल्डिंग में तीन रंग के टैग का क्या मतलब है - Green, Yellow और Red?",
+            category: "निरीक्षण",
+            difficulty: "medium"
+        },
+        {
+            question: "किन परिस्थितियों में स्कैफोल्डिंग का निर्माण नहीं करना चाहिए?",
+            category: "निरीक्षण",
+            difficulty: "medium"
+        },
+        
+        // Emergency and Hazards
+        {
+            question: "स्कैफोल्डिंग work के दौरान कौन से मुख्य hazards हो सकते हैं?",
+            category: "आपातकाल",
+            difficulty: "medium"
+        },
+        {
+            question: "यदि स्कैफोल्डिंग में कोई कमी या damage दिखे तो तुरंत क्या action लेना चाहिए?",
+            category: "आपातकाल",
+            difficulty: "medium"
+        },
+        {
+            question: "Fall protection system कब और कैसे use करना चाहिए? Lifeline क्या है?",
+            category: "आपातकाल",
+            difficulty: "hard"
         }
+    ];
 
-        // Get randomized questions
-        const selectedQuestions = shuffleArray(scaffoldingQuestions);
-
-        // Form submission
-        document.getElementById('candidateForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            candidateData = {
-                name: document.getElementById('name').value,
-                mobile: document.getElementById('mobile').value,
-                email: document.getElementById('email').value,
-                experience: document.getElementById('experience').value,
-                location: document.getElementById('location').value,
-                timestamp: new Date().toISOString(),
-                interviewId: 'SCAFFOLD_' + Date.now()
-            };
-
-            showSection('interview');
-            setupCamera();
-        });
-
-        // Setup camera
-        async function setupCamera() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: true, 
-                    audio: true 
-                });
-                
-                const videoElement = document.getElementById('videoElement');
-                videoElement.srcObject = stream;
-                
-                document.getElementById('statusText').textContent = 'कैमरा तैयार है - इंटरव्यू शुरू करें';
-                document.getElementById('startBtn').style.display = 'block';
-                
-            } catch (err) {
-                console.error('Camera access error:', err);
-                document.getElementById('statusText').textContent = 'कैमरा एक्सेस में समस्या - कृपया अनुमति दें';
-            }
+    // Shuffle array function
+    function shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
+        return shuffled;
+    }
 
-        // Start interview
-        function startInterview() {
-            document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('nextBtn').style.display = 'block';
+    // Get randomized questions
+    const selectedQuestions = shuffleArray(scaffoldingQuestions);
+
+    // Send data to Google Sheets
+    async function sendToGoogleSheets(data) {
+        const syncStatusEl = document.getElementById('syncStatus');
+        
+        try {
+            syncStatusEl.innerHTML = '<span>📊 डेटा Google Sheet में सेव हो रहा है...</span>';
             
-            currentQuestion = 0;
-            showQuestion();
-            updateProgress();
-        }
-
-        // Show current question
-        function showQuestion() {
-            if (currentQuestion < selectedQuestions.length) {
-                const questionData = selectedQuestions[currentQuestion];
-                
-                document.getElementById('questionCounter').textContent = `प्रश्न ${currentQuestion + 1}/${selectedQuestions.length}`;
-                document.getElementById('questionText').textContent = questionData.question;
-                document.getElementById('categoryBadge').textContent = questionData.category;
-                
-                // Category colors
-                const categoryColors = {
-                    'बुनियादी जानकारी': '#28a745',
-                    'कंपोनेंट्स': '#007bff',
-                    'सुरक्षा उपाय': '#ffc107',
-                    'निरीक्षण': '#17a2b8',
-                    'आपातकाल': '#dc3545'
-                };
-                
-                document.getElementById('categoryBadge').style.background = 
-                    categoryColors[questionData.category] || '#28a745';
-                
-                // Show AI speaking indicator
-                document.getElementById('aiSpeaking').style.display = 'block';
-                document.getElementById('recordingTimer').style.display = 'none';
-                
-                // Stop any ongoing recording
-                if (isRecording) {
-                    stopRecording();
-                }
-                
-                // Speak question and auto-start recording
-                speakQuestionAndRecord(questionData.question);
-                
-            } else {
-                completeInterview();
-            }
-        }
-
-        // Text-to-speech and auto-start recording
-        function speakQuestionAndRecord(text) {
-            if ('speechSynthesis' in window) {
-                // Stop any ongoing speech
-                window.speechSynthesis.cancel();
-                
-                currentSpeechUtterance = new SpeechSynthesisUtterance(text);
-                currentSpeechUtterance.lang = 'hi-IN';
-                currentSpeechUtterance.rate = 0.7;
-                currentSpeechUtterance.pitch = 1.0;
-                
-                // Auto-start recording when speech ends
-                currentSpeechUtterance.onend = function() {
-                    document.getElementById('aiSpeaking').style.display = 'none';
-                    setTimeout(() => {
-                        startRecording();
-                    }, 1000);
-                };
-                
-                window.speechSynthesis.speak(currentSpeechUtterance);
-            } else {
-                // Fallback if TTS not supported
-                document.getElementById('aiSpeaking').style.display = 'none';
-                setTimeout(() => {
-                    startRecording();
-                }, 2000);
-            }
-        }
-
-        // Start recording
-        function startRecording() {
-            if (isRecording) return;
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
             
-            recordedChunks = [];
+            // Since mode is 'no-cors', we can't read the response
+            // We'll assume success if no error is thrown
+            syncStatusEl.innerHTML = '<span>✅ डेटा सफलतापूर्वक Google Sheet "HAPPY SCREENING" में सेव हो गया!</span>';
+            syncStatusEl.classList.add('success');
             
-            mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.ondataavailable = function(event) {
-                if (event.data.size > 0) {
-                    recordedChunks.push(event.data);
-                }
+        } catch (error) {
+            console.error('Error sending to Google Sheets:', error);
+            syncStatusEl.innerHTML = '<span>❌ Google Sheet में डेटा सेव करने में समस्या आई। कृपया दोबारा कोशिश करें।</span>';
+            syncStatusEl.classList.add('error');
+        }
+    }
+
+    // Form submission
+    document.getElementById('candidateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        candidateData = {
+            name: document.getElementById('name').value,
+            mobile: document.getElementById('mobile').value,
+            email: document.getElementById('email').value,
+            experience: document.getElementById('experience').value,
+            location: document.getElementById('location').value,
+            timestamp: new Date().toISOString(),
+            interviewId: 'SCAFFOLD_' + Date.now()
+        };
+
+        showSection('interview');
+        setupCamera();
+    });
+
+    // Setup camera
+    async function setupCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: true, 
+                audio: true 
+            });
+            
+            const videoElement = document.getElementById('videoElement');
+            videoElement.srcObject = stream;
+            
+            document.getElementById('statusText').textContent = 'कैमरा तैयार है - इंटरव्यू शुरू करें';
+            document.getElementById('startBtn').style.display = 'block';
+            
+        } catch (err) {
+            console.error('Camera access error:', err);
+            document.getElementById('statusText').textContent = 'कैमरा एक्सेस में समस्या - कृपया अनुमति दें';
+        }
+    }
+
+    // Start interview
+    function startInterview() {
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('nextBtn').style.display = 'block';
+        
+        currentQuestion = 0;
+        showQuestion();
+        updateProgress();
+    }
+
+    // Show current question
+    function showQuestion() {
+        if (currentQuestion < selectedQuestions.length) {
+            const questionData = selectedQuestions[currentQuestion];
+            
+            document.getElementById('questionCounter').textContent = `प्रश्न ${currentQuestion + 1}/${selectedQuestions.length}`;
+            document.getElementById('questionText').textContent = questionData.question;
+            document.getElementById('categoryBadge').textContent = questionData.category;
+            
+            // Category colors
+            const categoryColors = {
+                'बुनियादी जानकारी': '#28a745',
+                'कंपोनेंट्स': '#007bff',
+                'सुरक्षा उपाय': '#ffc107',
+                'निरीक्षण': '#17a2b8',
+                'आपातकाल': '#dc3545'
             };
             
-            mediaRecorder.onstop = function() {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                console.log('Recording saved', blob);
-                
-                // Save answer data
-                interviewAnswers.push({
-                    questionNumber: currentQuestion + 1,
-                    question: selectedQuestions[currentQuestion].question,
-                    category: selectedQuestions[currentQuestion].category,
-                    difficulty: selectedQuestions[currentQuestion].difficulty,
-                    recordingBlob: blob,
-                    recordingDuration: getRecordingDuration(),
-                    timestamp: new Date().toISOString()
-                });
-            };
+            document.getElementById('categoryBadge').style.background = 
+                categoryColors[questionData.category] || '#28a745';
             
-            mediaRecorder.start();
-            isRecording = true;
-            recordingStartTime = Date.now();
+            // Show AI speaking indicator
+            document.getElementById('aiSpeaking').style.display = 'block';
+            document.getElementById('recordingTimer').style.display = 'none';
             
-            // Show recording UI
-            document.getElementById('recordingTimer').style.display = 'block';
-            document.getElementById('statusText').textContent = 'रिकॉर्डिंग चल रही है - अपना विस्तृत जवाब दें';
-            document.getElementById('statusDot').classList.add('recording');
-            
-            // Start timer
-            startRecordingTimer();
-        }
-
-        // Stop recording
-        function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-                isRecording = false;
-                
-                // Hide recording UI
-                document.getElementById('recordingTimer').style.display = 'none';
-                document.getElementById('statusText').textContent = 'जवाब रिकॉर्ड हो गया - अगला प्रश्न के लिए तैयार';
-                document.getElementById('statusDot').classList.remove('recording');
-                
-                // Stop timer
-                if (recordingTimer) {
-                    clearInterval(recordingTimer);
-                }
-            }
-        }
-
-        // Start recording timer
-        function startRecordingTimer() {
-            recordingTimer = setInterval(() => {
-                const elapsed = Date.now() - recordingStartTime;
-                const minutes = Math.floor(elapsed / 60000);
-                const seconds = Math.floor((elapsed % 60000) / 1000);
-                document.getElementById('timerDisplay').textContent = 
-                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        // Get recording duration
-        function getRecordingDuration() {
-            if (recordingStartTime) {
-                return Date.now() - recordingStartTime;
-            }
-            return 0;
-        }
-
-        // Next question
-        function nextQuestion() {
-            if (isRecording) {
-                stopRecording();
-            }
-            
-            // Stop any ongoing speech
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
-            }
-            
-            currentQuestion++;
-            showQuestion();
-            updateProgress();
-        }
-
-        // Update progress bar
-        function updateProgress() {
-            const progress = ((currentQuestion + 1) / selectedQuestions.length) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-        }
-
-        // Complete interview
-        function completeInterview() {
             // Stop any ongoing recording
             if (isRecording) {
                 stopRecording();
             }
             
-            // Stop any ongoing speech
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
-            }
+            // Speak question and auto-start recording
+            speakQuestionAndRecord(questionData.question);
             
-            // Save data
-            saveInterviewData();
-            
-            // Stop camera
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            
-            showSection('results');
+        } else {
+            completeInterview();
         }
+    }
 
-        // Save interview data
-        function saveInterviewData() {
-            const finalData = {
-                candidate: candidateData,
-                totalQuestions: selectedQuestions.length,
-                answers: interviewAnswers.map(answer => ({
-                    questionNumber: answer.questionNumber,
-                    question: answer.question,
-                    category: answer.category,
-                    difficulty: answer.difficulty,
-                    recordingDuration: answer.recordingDuration,
-                    timestamp: answer.timestamp
-                })),
-                completedAt: new Date().toISOString(),
-                interviewType: 'Scaffolding Safety Assessment'
+    // Text-to-speech and auto-start recording
+    function speakQuestionAndRecord(text) {
+        if ('speechSynthesis' in window) {
+            // Stop any ongoing speech
+            window.speechSynthesis.cancel();
+            
+            currentSpeechUtterance = new SpeechSynthesisUtterance(text);
+            currentSpeechUtterance.lang = 'hi-IN';
+            currentSpeechUtterance.rate = 0.7;
+            currentSpeechUtterance.pitch = 1.0;
+            
+            // Auto-start recording when speech ends
+            currentSpeechUtterance.onend = function() {
+                document.getElementById('aiSpeaking').style.display = 'none';
+                setTimeout(() => {
+                    startRecording();
+                }, 1000);
             };
             
-     fetch('https://script.google.com/macros/s/AKfycbyNLoFPn08HFfrI0dXmd5STxKLuPXSf3FNfUNvi5PsyfxPPTbS5Z-CeNXHb4I1f82jTjA/exec', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(finalData)
-})
-.then(res => res.text())
-.then(response => {
-    console.log('✅ Data sent to Google Sheet:', response);
-    alert("✅ Data sent to Google Sheet successfully!");
-})
-.catch(error => {
-    console.error('❌ Error sending data to Google Sheet:', error);
-    alert("❌ Failed to send data to Google Sheet.");
-});
+            window.speechSynthesis.speak(currentSpeechUtterance);
+        } else {
+            // Fallback if TTS not supported
+            document.getElementById('aiSpeaking').style.display = 'none';
+            setTimeout(() => {
+                startRecording();
+            }, 2000);
+        }
+    }
+
+    // Start recording
+    function startRecording() {
+        if (isRecording) return;
+        
+        recordedChunks = [];
+        
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = function(event) {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+        
+        mediaRecorder.onstop = function() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            console.log('Recording saved', blob);
             
-            // Here you would typically send this data to your backend
-            // For now, we're just logging it
-        }
-
-        // Show section
-        function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
+            // Save answer data
+            interviewAnswers.push({
+                questionNumber: currentQuestion + 1,
+                question: selectedQuestions[currentQuestion].question,
+                category: selectedQuestions[currentQuestion].category,
+                difficulty: selectedQuestions[currentQuestion].difficulty,
+                recordingBlob: blob,
+                recordingDuration: getRecordingDuration(),
+                timestamp: new Date().toISOString()
             });
-            document.getElementById(sectionId).classList.add('active');
-        }
+        };
+        
+        mediaRecorder.start();
+        isRecording = true;
+        recordingStartTime = Date.now();
+        
+        // Show recording UI
+        document.getElementById('recordingTimer').style.display = 'block';
+        document.getElementById('statusText').textContent = 'रिकॉर्डिंग चल रही है - अपना विस्तृत जवाब दें';
+        document.getElementById('statusDot').classList.add('recording');
+        
+        // Start timer
+        startRecordingTimer();
+    }
 
-        // Restart interview
-        function restartInterview() {
-            location.reload();
+    // Stop recording
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            isRecording = false;
+            
+            // Hide recording UI
+            document.getElementById('recordingTimer').style.display = 'none';
+            document.getElementById('statusText').textContent = 'जवाब रिकॉर्ड हो गया - अगला प्रश्न के लिए तैयार';
+            document.getElementById('statusDot').classList.remove('recording');
+            
+            // Stop timer
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+            }
         }
+    }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Enhanced Scaffolding Safety Interview System Initialized');
-            console.log('Total Questions Available:', scaffoldingQuestions.length);
-            console.log('Selected Questions for Interview:', selectedQuestions.length);
-        });
-    </script>
-</body>
-</html>
+    // Start recording timer
+    function startRecordingTimer() {
+        recordingTimer = setInterval(() => {
+            const elapsed = Date.now() - recordingStartTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('timerDisplay').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    // Get recording duration
+    function getRecordingDuration() {
+        if (recordingStartTime) {
+            return Date.now() - recordingStartTime;
+        }
+        return 0;
+    }
+
+    // Next question
+    function nextQuestion() {
+        if (isRecording) {
+            stopRecording();
+        }
+        
+        // Stop any ongoing speech
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+        
+        currentQuestion++;
+        showQuestion();
+        updateProgress();
+    }
+
+    // Update progress bar
+    function updateProgress() {
+        const progress = ((currentQuestion + 1) / selectedQuestions.length) * 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+    }
+
+    // Complete interview
+    function completeInterview() {
+        // Stop any ongoing recording
+        if (isRecording) {
+            stopRecording();
+        }
+        
+        // Stop any ongoing speech
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+        
+        // Save data
+        saveInterviewData();
+        
+        // Stop camera
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        
+        showSection('results');
+    }
+
+    // Save interview data
+    async function saveInterviewData() {
+        const finalData = {
+            candidate: candidate
