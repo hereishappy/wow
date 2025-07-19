@@ -45,10 +45,6 @@
       margin-top: 10px;
     }
 
-    #avatarContainer {
-      margin-bottom: 20px;
-    }
-
     #questionBox {
       font-size: 1.5rem;
       margin: 20px;
@@ -62,13 +58,6 @@
 </head>
 <body>
   <h1>🎤 स्कैफोल्डिंग इंटरव्यू - Cuplok System</h1>
-
-  <div id="avatarContainer">
-    <video width="300" autoplay muted loop>
-      <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
-    </video>
-    <p><i>AI इंटरव्यूअर (Demo Look)</i></p>
-  </div>
 
   <div>
     <input type="text" id="candidateName" placeholder="नाम लिखें" oninput="checkFields()">
@@ -102,6 +91,15 @@
     let shuffled = [];
     let recorder, audioChunks = [];
     let scores = [];
+    let hindiVoice;
+
+    window.speechSynthesis.onvoiceschanged = () => {
+      const voices = speechSynthesis.getVoices();
+      // Try to get a female Hindi voice
+      hindiVoice = voices.find(voice =>
+        voice.lang === "hi-IN" && voice.name.toLowerCase().includes("female")
+      ) || voices.find(v => v.lang === "hi-IN") || voices[0];
+    };
 
     function checkFields() {
       const name = document.getElementById("candidateName").value.trim();
@@ -126,8 +124,19 @@
 
       const q = shuffled[current];
       document.getElementById("questionBox").innerText = `प्रश्न ${current + 1}: ${q}`;
+      speakQuestion(q); // 🔊 Speak Hindi voice
       startTimer(20);
       startRecording();
+    }
+
+    function speakQuestion(text) {
+      const msg = new SpeechSynthesisUtterance();
+      msg.text = text;
+      msg.lang = "hi-IN";
+      msg.voice = hindiVoice;
+      msg.rate = 0.9;
+      window.speechSynthesis.cancel(); // Stop previous speech if any
+      window.speechSynthesis.speak(msg);
     }
 
     function startTimer(sec) {
