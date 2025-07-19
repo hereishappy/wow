@@ -369,7 +369,8 @@
                 <div id="questionText" class="question-box">
                     इंटरव्यू शुरू करने के लिए तैयार हो जाइए...
                 </div>
-                <video id="cameraFeed" autoplay playsinline></video>
+                <!-- Added 'muted' attribute to prevent audio loopback/echo -->
+                <video id="cameraFeed" autoplay playsinline muted></video>
                 <div class="status-area">
                     <div id="statusDot" class="status-dot"></div>
                     <span id="statusText">तैयार हो रहा है...</span>
@@ -457,6 +458,7 @@
         // --- Section Management Functions ---
         // Hides all sections and shows the specified one
         function showSection(sectionId) {
+            console.log(`Showing section: ${sectionId}`);
             registrationSection.classList.remove('active');
             interviewSection.classList.remove('active');
             resultsSection.classList.remove('active');
@@ -473,10 +475,12 @@
         // --- Camera Setup and Teardown ---
         // Requests camera and microphone access and displays the feed
         async function setupCamera() {
+            console.log("Attempting to set up camera and microphone...");
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 cameraFeed.srcObject = stream;
                 cameraFeed.style.display = 'block'; // Show camera feed once stream is active
+                console.log("Camera and microphone access granted.");
             } catch (err) {
                 console.error("कैमरा एक्सेस करने में त्रुटि:", err);
                 // Use a custom message box instead of alert() for better UX
@@ -488,10 +492,13 @@
 
         // Stops all camera and microphone tracks and hides the feed
         function stopCamera() {
+            console.log("Stopping camera and microphone tracks...");
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
                 cameraFeed.srcObject = null;
                 cameraFeed.style.display = 'none'; // Hide camera feed
+                stream = null; // Clear stream reference
+                console.log("Camera and microphone stopped.");
             }
         }
 
@@ -505,6 +512,7 @@
 
         // Displays the current question and manages AI speaking/recording states
         function displayQuestion() {
+            console.log(`Displaying question index: ${currentQuestionIndex}`);
             if (currentQuestionIndex < interviewQuestions.length) {
                 const question = interviewQuestions[currentQuestionIndex];
                 questionText.textContent = question.text;
@@ -520,6 +528,7 @@
                 statusDot.classList.remove('recording');
                 aiSpeaking.style.display = 'inline';
                 recordingTimerDisplay.style.display = 'none';
+                console.log(`AI speaking for question: "${question.text}"`);
 
                 // Simulate AI speaking duration, then start recording
                 setTimeout(() => {
@@ -528,15 +537,23 @@
 
             } else {
                 // If all questions are done, end the interview
+                console.log("All questions completed. Ending interview.");
                 endInterview();
             }
         }
 
         // Starts audio recording from the user's microphone
         function startRecording() {
+            console.log("Attempting to start recording...");
             if (!stream) {
                 console.error("रिकॉर्डिंग के लिए स्ट्रीम उपलब्ध नहीं है।");
                 showCustomMessage("रिकॉर्डिंग शुरू करने के लिए कैमरा/माइक एक्सेस आवश्यक है।", "error");
+                // Fallback: If no stream, allow user to proceed or restart
+                nextBtn.style.display = 'block'; // Show next button to allow progression
+                statusText.textContent = 'रिकॉर्डिंग विफल। अगले प्रश्न पर जाएं।';
+                statusDot.classList.remove('recording');
+                aiSpeaking.style.display = 'none';
+                recordingTimerDisplay.style.display = 'none';
                 return;
             }
 
@@ -550,37 +567,63 @@
 
             // Stop any previous mediaRecorder instance if it's still active
             if (mediaRecorder && mediaRecorder.state === 'recording') {
+                console.log("Stopping previous mediaRecorder instance.");
                 mediaRecorder.stop();
             }
 
-            // Initialize MediaRecorder and prepare for data collection
-            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-            audioChunks = []; // Clear previous audio chunks
+            try {
+                // Initialize MediaRecorder and prepare for data collection
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                audioChunks = []; // Clear previous audio chunks
 
-            mediaRecorder.ondataavailable = (event) => {
-                // Collect audio data chunks as they become available
-                audioChunks.push(event.data);
-            };
+                mediaRecorder.ondataavailable = (event) => {
+                    // Collect audio data chunks as they become available
+                    audioChunks.push(event.data);
+                    console.log(`Audio data chunk available. Total chunks: ${audioChunks.length}`);
+                };
 
-            mediaRecorder.onstop = () => {
-                // This event fires when recording stops (either manually or by duration)
-                console.log("ऑडियो रिकॉर्डिंग समाप्त हुई। चंक्स की संख्या:", audioChunks.length);
-                nextBtn.style.display = 'block'; // Show next button to proceed
-                statusText.textContent = 'अगले प्रश्न के लिए तैयार...';
+                mediaRecorder.onstop = () => {
+                    // This event fires when recording stops (either manually or by duration)
+                    console.log("ऑडियो रिकॉर्डिंग समाप्त हुई। चंक्स की संख्या:", audioChunks.length);
+                    nextBtn.style.display = 'block'; // Show next button to proceed
+                    statusText.textContent = 'अगले प्रश्न के लिए तैयार...';
+                    statusDot.classList.remove('recording');
+                    recordingTimerDisplay.style.display = 'none';
+                    clearInterval(interviewTimer); // Stop the recording timer interval
+                };
+
+                mediaRecorder.onerror = (event) => {
+                    console.error("MediaRecorder error:", event.error);
+                    showCustomMessage(`रिकॉर्डिंग में त्रुटि: ${event.error.name}.`, "error");
+                    nextBtn.style.display = 'block'; // Show next button even on error to allow progression
+                    statusText.textContent = 'रिकॉर्डिंग त्रुटि। अगले प्रश्न पर जाएं।';
+                    statusDot.classList.remove('recording');
+                    aiSpeaking.style.display = 'none';
+                    recordingTimerDisplay.style.display = 'none';
+                    clearInterval(interviewTimer);
+                };
+
+                mediaRecorder.start(); // Start the recording
+                console.log("MediaRecorder started.");
+
+                // Set a timeout to automatically stop recording after the specified duration for the current question
+                const question = interviewQuestions[currentQuestionIndex];
+                interviewTimer = setTimeout(() => {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        console.log("Recording duration reached. Stopping mediaRecorder.");
+                        mediaRecorder.stop();
+                    }
+                }, question.recordDuration);
+            } catch (error) {
+                console.error("Error initializing or starting MediaRecorder:", error);
+                showCustomMessage("रिकॉर्डिंग शुरू करने में गंभीर त्रुटि हुई।", "error");
+                nextBtn.style.display = 'block'; // Show next button on critical error
+                statusText.textContent = 'रिकॉर्डिंग शुरू नहीं हो सकी। अगले प्रश्न पर जाएं।';
                 statusDot.classList.remove('recording');
+                aiSpeaking.style.display = 'none';
                 recordingTimerDisplay.style.display = 'none';
-                clearInterval(interviewTimer); // Stop the recording timer interval
-            };
-
-            mediaRecorder.start(); // Start the recording
-
-            // Set a timeout to automatically stop recording after the specified duration for the current question
-            const question = interviewQuestions[currentQuestionIndex];
-            interviewTimer = setTimeout(() => {
-                if (mediaRecorder.state === 'recording') {
-                    mediaRecorder.stop();
-                }
-            }, question.recordDuration);
+                clearInterval(interviewTimer);
+            }
         }
 
         // Updates the recording timer display every second
@@ -601,6 +644,7 @@
 
         // Ends the interview, stops camera, and shows results section
         function endInterview() {
+            console.log("Interview ended. Stopping camera and submitting data.");
             stopCamera(); // Stop camera and microphone
             showSection('results'); // Show the results section
             submitInterviewData(); // Trigger data submission
@@ -611,6 +655,7 @@
             // Initial status message for data saving
             syncStatus.innerHTML = '<span>📊 डेटा Google Sheet में सेव हो रहा है...</span>';
             syncStatus.classList.remove('success', 'error');
+            console.log("Attempting to submit data to Google Sheet...");
 
             // Prepare data to be submitted. Note: 'email' and 'working place' are excluded.
             const dataToSubmit = {
@@ -624,7 +669,7 @@
             console.log("Google Sheet में सबमिट करने के लिए डेटा:", dataToSubmit);
 
             // Google Apps Script Web App URL
-            const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbyNLoFPn08HFfrI0dXmd5STxKLuPXSf3FNfUNvi5PsyfxPPTbS5Z-CeNXHb4I1f82jTjA/exec';
+            const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbyNLoFP08HFfrI0dXmd5STxKLuPXSf3FNfUNvi5PsyfxPPTbS5Z-CeNXHb4I1f82jTjA/exec';
             const sheetName = 'HAPPY SCREENING'; // The user specified this tab name
 
             try {
@@ -648,6 +693,7 @@
                 if (result.status === 'success') {
                     syncStatus.innerHTML = '<span>✅ डेटा सफलतापूर्वक Google Sheet में सेव हो गया है!</span>';
                     syncStatus.classList.add('success');
+                    console.log("Data submitted successfully to Google Sheet.");
                 } else {
                     console.error("Google Sheet सबमिशन त्रुटि:", result.message || "अज्ञात त्रुटि");
                     syncStatus.innerHTML = `<span>❌ डेटा सेव करने में त्रुटि: ${result.message || 'अज्ञात त्रुटि'}</span>`;
@@ -710,6 +756,7 @@
         // Handles form submission for candidate registration
         candidateForm.addEventListener('submit', async (e) => {
             e.preventDefault(); // Prevent default form submission behavior
+            console.log("Candidate form submitted.");
 
             // Store candidate data
             candidateData.name = candidateNameInput.value;
@@ -722,27 +769,32 @@
                 currentQuestionIndex = -1; // Set to -1 so nextQuestion starts with index 0
                 nextQuestion(); // Display the first question
             } else {
+                console.warn("Camera setup failed. Not proceeding to interview section.");
                 // If camera access failed, stay on registration or show an error (handled by showCustomMessage in setupCamera)
             }
         });
 
         // Event listener for the "Start Interview" button
         startBtn.addEventListener('click', () => {
+            console.log("Start Interview button clicked.");
             nextQuestion(); // Advance to the first question
         });
 
         // Event listener for the "Next Question" button
         nextBtn.addEventListener('click', () => {
+            console.log("Next Question button clicked.");
             nextQuestion(); // Advance to the next question
         });
 
         // Event listener for the "Start New Interview" button on the results page
         resetBtn.addEventListener('click', () => {
+            console.log("Reset Interview button clicked.");
             resetInterview(); // Reset the entire interview process
         });
 
         // Function to advance to the next question or end the interview
         function nextQuestion() {
+            console.log(`Calling nextQuestion. Current index: ${currentQuestionIndex}`);
             currentQuestionIndex++; // Increment question index
             if (currentQuestionIndex < interviewQuestions.length) {
                 displayQuestion(); // Display the next question
@@ -753,6 +805,7 @@
 
         // Resets the interview state and UI to the initial registration screen
         function resetInterview() {
+            console.log("Resetting interview state.");
             stopCamera(); // Stop camera and microphone
             currentQuestionIndex = 0; // Reset question index
             candidateForm.reset(); // Clear form fields
@@ -776,6 +829,7 @@
 
         // Initial setup on page load: ensures the registration section is visible first
         document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM Content Loaded. Initializing app.");
             showSection('registration');
         });
 
