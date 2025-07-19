@@ -114,10 +114,16 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        .registration-form button:hover {
+        .registration-form button:hover:not(:disabled) {
             opacity: 0.9;
             transform: translateY(-2px);
             box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+        }
+
+        .registration-form button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
         }
 
         /* Interview Section Styles */
@@ -186,6 +192,7 @@
             margin-bottom: 30px;
             font-size: 1.1rem;
             color: #555;
+            min-height: 25px;
         }
 
         .status-dot {
@@ -270,6 +277,8 @@
             margin-top: 30px;
             font-size: 1.1rem;
             font-weight: bold;
+            display: inline-flex;
+            justify-content: center;
         }
 
         .sync-status span {
@@ -315,6 +324,7 @@
             .controls {
                 flex-direction: column;
                 gap: 15px;
+                width: 100%;
             }
             .controls button {
                 width: 100%;
@@ -330,7 +340,6 @@
         </div>
 
         <div class="content-section">
-            <!-- Registration Section -->
             <div id="registrationSection" class="section active">
                 <h2>उम्मीदवार पंजीकरण</h2>
                 <form id="candidateForm" class="registration-form">
@@ -344,7 +353,6 @@
                 </form>
             </div>
 
-            <!-- Interview Section -->
             <div id="interviewSection" class="section">
                 <h2>AI इंटरव्यू</h2>
                 <div class="progress-bar-container">
@@ -357,21 +365,17 @@
                 <div id="questionText" class="question-box">
                     नमस्ते! AI इंटरव्यू सिस्टम में आपका स्वागत है। इंटरव्यू शुरू करने के लिए 'इंटरव्यू शुरू करें' बटन दबाएं।
                 </div>
-                <!-- No video element needed anymore -->
                 <div class="status-area">
                     <div id="statusDot" class="status-dot"></div>
                     <span id="statusText">AI बोल रहा है...</span>
                     <span id="aiSpeaking" class="ai-speaking">AI बोल रहा है...</span>
-                    <span id="recordingTimer" class="recording-timer">00:00</span>
+                    <span id="recordingTimer" class="recording-timer">00:20</span>
                 </div>
                 <div class="controls">
-                    <!-- Start button initially hidden, shown after welcome speech -->
                     <button id="startBtn" style="display: none;">इंटरव्यू शुरू करें</button>
-                    <!-- Next button removed as progression is automatic -->
                 </div>
             </div>
 
-            <!-- Results Section -->
             <div id="resultsSection" class="section">
                 <h2>इंटरव्यू पूरा हुआ!</h2>
                 <p>आपका इंटरव्यू सफलतापूर्वक पूरा हो गया है।</p>
@@ -388,7 +392,7 @@
         // Global variables for interview state and data
         let currentQuestionIndex = -1; // Start at -1 for welcome, then 0 for first question
         let interviewQuestions = []; // This will hold the shuffled 10 questions
-        let originalInterviewQuestions = [ // Master list of questions
+        const originalInterviewQuestions = [ // Master list of questions
             { text: "कृपया अपना परिचय दें।", category: "बुनियादी जानकारी" },
             { text: "आपने इस पद के लिए क्यों आवेदन किया?", category: "बुनियादी जानकारी" },
             { text: "आपकी सबसे बड़ी ताकत क्या है?", category: "व्यवहारिक" },
@@ -412,6 +416,7 @@
         let mediaRecorder;
         let audioChunks = [];
         let stream; // To hold the microphone stream
+        let timerIntervalId; // To store the interval ID for the recording timer
 
         // Candidate Data object
         let candidateData = {
@@ -424,11 +429,9 @@
         const registrationSection = document.getElementById('registrationSection');
         const interviewSection = document.getElementById('interviewSection');
         const resultsSection = document.getElementById('resultsSection');
-
         const candidateForm = document.getElementById('candidateForm');
         const candidateNameInput = document.getElementById('candidateName');
         const candidatePhoneInput = document.getElementById('candidatePhone');
-
         const progressFill = document.getElementById('progressFill');
         const questionCounter = document.getElementById('questionCounter');
         const categoryBadge = document.getElementById('categoryBadge');
@@ -455,7 +458,6 @@
         // Text-to-Speech function
         let hindiVoice = null;
         function loadVoices() {
-            // Get voices and find a Hindi voice
             const voices = window.speechSynthesis.getVoices();
             hindiVoice = voices.find(voice => voice.lang === 'hi-IN' || voice.name.includes('Hindi'));
             if (!hindiVoice) {
@@ -465,96 +467,67 @@
             }
         }
 
-        // Load voices when they are ready
         if ('speechSynthesis' in window) {
             if (window.speechSynthesis.onvoiceschanged !== undefined) {
                 window.speechSynthesis.onvoiceschanged = loadVoices;
             }
-            // Also try to load immediately in case voices are already loaded (e.g., on page refresh)
             loadVoices();
         }
 
         function speakText(text, lang = 'hi-IN') {
             return new Promise(resolve => {
                 if (!('speechSynthesis' in window)) {
-                    console.warn("Speech Synthesis not supported in this browser. Cannot speak.");
-                    showCustomMessage("आपके ब्राउज़र में AI आवाज़ समर्थित नहीं है।", "error");
+                    console.warn("Speech Synthesis not supported.");
                     resolve();
                     return;
                 }
-
                 if (window.speechSynthesis.speaking) {
-                    console.log("SpeechSynthesis is already speaking, cancelling previous utterance.");
-                    window.speechSynthesis.cancel(); // Stop any ongoing speech
+                    window.speechSynthesis.cancel();
                 }
 
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = lang;
                 if (hindiVoice) {
                     utterance.voice = hindiVoice;
-                } else {
-                    // Fallback: try to find a generic voice if specific Hindi voice isn't found
-                    const voices = window.speechSynthesis.getVoices();
-                    const defaultHindiVoice = voices.find(voice => voice.lang === 'hi-IN');
-                    if (defaultHindiVoice) {
-                        utterance.voice = defaultHindiVoice;
-                    } else {
-                        console.warn("No specific Hindi voice found, using default browser voice.");
-                    }
                 }
-
-                utterance.onend = () => {
-                    console.log(`Speech finished for: "${text}"`);
-                    resolve();
-                };
+                utterance.onend = () => resolve();
                 utterance.onerror = (event) => {
                     console.error('SpeechSynthesisUtterance.onerror:', event.error);
-                    showCustomMessage(`AI आवाज़ में त्रुटि: ${event.error}.`, "error");
-                    resolve(); // Resolve even on error to not block flow
+                    resolve();
                 };
-
-                console.log(`Attempting to speak: "${text}"`);
                 window.speechSynthesis.speak(utterance);
             });
         }
 
         // --- Section Management Functions ---
         function showSection(sectionId) {
-            console.log(`Showing section: ${sectionId}`);
             registrationSection.classList.remove('active');
             interviewSection.classList.remove('active');
             resultsSection.classList.remove('active');
 
-            if (sectionId === 'registration') {
-                registrationSection.classList.add('active');
-            } else if (sectionId === 'interview') {
-                interviewSection.classList.add('active');
-            } else if (sectionId === 'results') {
-                resultsSection.classList.add('active');
-            }
+            const section = document.getElementById(`${sectionId}Section`);
+            if(section) section.classList.add('active');
         }
 
         // --- Microphone Setup and Teardown ---
         async function setupMicrophone() {
             console.log("Attempting to set up microphone...");
             try {
-                // Request only audio stream
                 stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                 console.log("Microphone access granted.");
-                return true; // Indicate success
+                return true;
             } catch (err) {
                 console.error("माइक्रोफ़ोन एक्सेस करने में त्रुटि:", err);
-                showCustomMessage("माइक्रोफ़ोन एक्सेस करने में समस्या हुई। कृपया सुनिश्चित करें कि आपने अनुमति दी है।", "error");
-                stream = null; // Ensure stream is null if access fails
-                return false; // Indicate failure
+                showCustomMessage("माइक्रोफ़ोन एक्सेस करने में समस्या हुई। कृपया सुनिश्चित करें कि आपने अनुमति दी है और फिर से प्रयास करें।", "error");
+                stream = null;
+                return false;
             }
         }
 
         function stopMicrophone() {
-            console.log("Stopping microphone tracks...");
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
-                stream = null; // Clear stream reference
+                stream = null;
                 console.log("Microphone stopped.");
             }
         }
@@ -567,296 +540,86 @@
         }
 
         async function displayQuestion() {
-            // Clear any previous timeouts for the next question
             clearTimeout(questionTimerTimeout);
 
-            if (currentQuestionIndex < interviewQuestions.length) {
-                const question = interviewQuestions[currentQuestionIndex];
-                questionText.textContent = question.text;
-                categoryBadge.textContent = question.category;
-                updateProgress();
+            const question = interviewQuestions[currentQuestionIndex];
+            questionText.textContent = question.text;
+            categoryBadge.textContent = question.category;
+            updateProgress();
 
-                // Set status for AI speaking
-                statusText.textContent = 'AI बोल रहा है...';
-                statusDot.classList.remove('recording');
-                aiSpeaking.style.display = 'inline';
-                recordingTimerDisplay.style.display = 'none';
+            statusText.textContent = 'AI बोल रहा है...';
+            statusDot.classList.remove('recording');
+            aiSpeaking.style.display = 'inline';
+            recordingTimerDisplay.style.display = 'none';
 
-                console.log(`AI speaking for question: "${question.text}"`);
-                await speakText(question.text, 'hi-IN'); // Wait for AI to finish speaking
-
-                startRecording(); // Start recording after AI speaks
-
-                // Set timeout for automatic next question
-                questionTimerTimeout = setTimeout(() => {
-                    console.log("20-second time limit reached. Moving to next question automatically.");
-                    nextQuestion();
-                }, QUESTION_TIME_LIMIT);
-
-            } else {
-                console.log("All questions completed. Ending interview.");
-                endInterview();
-            }
+            await speakText(question.text, 'hi-IN');
+            
+            startRecording();
+            
+            questionTimerTimeout = setTimeout(nextQuestion, QUESTION_TIME_LIMIT);
         }
 
         function startRecording() {
-            console.log("Attempting to start recording...");
-            if (!stream || !stream.getAudioTracks().length) {
+            if (!stream) {
                 console.error("रिकॉर्डिंग के लिए ऑडियो स्ट्रीम उपलब्ध नहीं है।");
-                showCustomMessage("रिकॉर्डिंग शुरू करने के लिए माइक एक्सेस आवश्यक है।", "error");
-                statusText.textContent = 'रिकॉर्डिंग विफल। अगले प्रश्न पर जाएं।';
-                statusDot.classList.remove('recording');
-                aiSpeaking.style.display = 'none';
-                recordingTimerDisplay.style.display = 'none';
-                // If recording fails, still allow progression after a short delay
-                questionTimerTimeout = setTimeout(() => nextQuestion(), 2000); // 2 seconds to show error then move on
+                statusText.textContent = 'रिकॉर्डिंग विफल।';
+                questionTimerTimeout = setTimeout(nextQuestion, 2000);
                 return;
             }
 
-            // Stop any previous mediaRecorder instance if it's still active
             if (mediaRecorder && mediaRecorder.state === 'recording') {
-                console.log("Stopping previous mediaRecorder instance.");
                 mediaRecorder.stop();
             }
 
             try {
-                // Create a new stream with only the audio track for MediaRecorder
-                const audioStream = new MediaStream([stream.getAudioTracks()[0]]);
-                mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
-                audioChunks = []; // Clear previous audio chunks
-
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
-                    console.log(`Audio data chunk available. Total chunks: ${audioChunks.length}`);
-                };
-
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                audioChunks = [];
+                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
                 mediaRecorder.onstop = () => {
-                    console.log("ऑडियो रिकॉर्डिंग समाप्त हुई। चंक्स की संख्या:", audioChunks.length);
-                    statusText.textContent = 'आपकी प्रतिक्रिया रिकॉर्ड की गई।';
-                    statusDot.classList.remove('recording');
-                    recordingTimerDisplay.style.display = 'none';
-                    // The next question is handled by questionTimerTimeout, not here
+                    console.log("ऑडियो रिकॉर्डिंग समाप्त हुई।");
+                    // Audio chunks are ready but not processed in this version.
                 };
-
-                mediaRecorder.onerror = (event) => {
-                    console.error("MediaRecorder error:", event.error);
-                    showCustomMessage(`रिकॉर्डिंग में त्रुटि: ${event.error.name}.`, "error");
-                    statusText.textContent = 'रिकॉर्डिंग त्रुटि। अगले प्रश्न पर जाएं।';
-                    statusDot.classList.remove('recording');
-                    aiSpeaking.style.display = 'none';
-                    recordingTimerDisplay.style.display = 'none';
-                    // The next question is handled by questionTimerTimeout, not here
-                };
-
-                mediaRecorder.start(); // Start the recording
+                mediaRecorder.onerror = event => console.error("MediaRecorder error:", event.error);
+                
+                mediaRecorder.start();
                 console.log("MediaRecorder started.");
 
-                // Update status for user recording
                 statusText.textContent = 'आप बोल रहे हैं...';
                 statusDot.classList.add('recording');
                 aiSpeaking.style.display = 'none';
                 recordingTimerDisplay.style.display = 'inline';
                 recordingStartTime = Date.now();
-                updateRecordingTimer(); // Start updating the timer display
-
-                // Automatically stop recording after QUESTION_TIME_LIMIT
-                setTimeout(() => {
-                    if (mediaRecorder && mediaRecorder.state === 'recording') {
-                        console.log("Recording duration reached. Stopping mediaRecorder.");
-                        mediaRecorder.stop();
-                    }
-                }, QUESTION_TIME_LIMIT);
+                updateRecordingTimer();
 
             } catch (error) {
-                console.error("Error initializing or starting MediaRecorder:", error);
-                showCustomMessage("रिकॉर्डिंग शुरू करने में गंभीर त्रुटि हुई।", "error");
-                statusText.textContent = 'रिकॉर्डिंग शुरू नहीं हो सकी। अगले प्रश्न पर जाएं।';
-                statusDot.classList.remove('recording');
-                aiSpeaking.style.display = 'none';
-                recordingTimerDisplay.style.display = 'none';
-                // If recording fails, still allow progression after a short delay
-                questionTimerTimeout = setTimeout(() => nextQuestion(), 2000); // 2 seconds to show error then move on
+                console.error("Error initializing MediaRecorder:", error);
+                showCustomMessage("रिकॉर्डिंग शुरू करने में त्रुटि हुई।", "error");
+                questionTimerTimeout = setTimeout(nextQuestion, 2000);
             }
         }
 
-        let timerIntervalId; // To store the interval ID for the recording timer
         function updateRecordingTimer() {
-            clearInterval(timerIntervalId); // Clear any existing interval
+            clearInterval(timerIntervalId);
             timerIntervalId = setInterval(() => {
-                if (mediaRecorder && mediaRecorder.state === 'recording') {
-                    const elapsedTime = Date.now() - recordingStartTime;
-                    const remainingTime = Math.max(0, QUESTION_TIME_LIMIT - elapsedTime);
-                    const seconds = Math.floor(remainingTime / 1000);
-                    const minutes = Math.floor(seconds / 60);
-                    const displaySeconds = String(seconds % 60).padStart(2, '0');
-                    const displayMinutes = String(minutes).padStart(2, '0');
-                    recordingTimerDisplay.textContent = `${displayMinutes}:${displaySeconds}`;
-                } else {
-                    clearInterval(timerIntervalId); // Stop interval if recording is not active
+                if (!mediaRecorder || mediaRecorder.state !== 'recording') {
+                    clearInterval(timerIntervalId);
+                    return;
                 }
-            }, 1000);
+                const elapsedTime = Date.now() - recordingStartTime;
+                const remainingTime = Math.max(0, QUESTION_TIME_LIMIT - elapsedTime);
+                const seconds = String(Math.floor((remainingTime / 1000) % 60)).padStart(2, '0');
+                const minutes = String(Math.floor((remainingTime / 1000) / 60)).padStart(2, '0');
+                recordingTimerDisplay.textContent = `${minutes}:${seconds}`;
+            }, 500);
         }
-
-        function endInterview() {
-            console.log("Interview ended. Stopping microphone and submitting data.");
-            stopMicrophone(); // Stop microphone tracks
-            clearTimeout(questionTimerTimeout); // Clear any pending question timeout
-            submitInterviewData(); // Trigger data submission
-        }
-
-        // --- Data Submission to Google Apps Script ---
-        async function submitInterviewData() {
-            syncStatus.innerHTML = '<span>📊 डेटा Google Sheet में सेव हो रहा है...</span>';
-            syncStatus.classList.remove('success', 'error');
-            console.log("Attempting to submit data to Google Sheet...");
-
-            const dataToSubmit = {
-                candidateName: candidateData.name,
-                candidatePhone: candidateData.phone,
-                interviewStatus: "Completed",
-                interviewDate: candidateData.interviewDate
-            };
-
-            console.log("Google Sheet में सबमिट करने के लिए डेटा:", dataToSubmit);
-
-            const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbyNLoFP08HFfrI0dXmd5STxKLuPXSf3FNfUNvi5PsyfxPPTbS5Z-CeNXHb4I1f82jTjA/exec';
-            const sheetName = 'HAPPY SCREENING';
-
-            try {
-                const response = await fetch(appsScriptUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        action: 'addRecord',
-                        sheetName: sheetName,
-                        name: dataToSubmit.candidateName,
-                        phone: dataToSubmit.candidatePhone,
-                        status: dataToSubmit.interviewStatus,
-                        date: dataToSubmit.interviewDate
-                    }).toString(),
-                });
-
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    syncStatus.innerHTML = '<span>✅ डेटा सफलतापूर्वक Google Sheet में सेव हो गया है!</span>';
-                    syncStatus.classList.add('success');
-                    console.log("Data submitted successfully to Google Sheet.");
-                } else {
-                    console.error("Google Sheet सबमिशन त्रुटि:", result.message || "अज्ञात त्रुटि");
-                    syncStatus.innerHTML = `<span>❌ डेटा सेव करने में त्रुटि: ${result.message || 'अज्ञात त्रुटि'}</span>`;
-                    syncStatus.classList.add('error');
-                }
-            } catch (error) {
-                console.error("नेटवर्क या सर्वर त्रुटि:", error);
-                syncStatus.innerHTML = '<span>❌ नेटवर्क त्रुटि: कृपया पुनः प्रयास करें।</span>';
-                syncStatus.classList.add('error');
-            } finally {
-                showSection('results');
-            }
-        }
-
-        // --- Custom Message Box (Replaces alert()) ---
-        function showCustomMessage(message, type = 'info') {
-            const messageBox = document.createElement('div');
-            messageBox.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background-color: white;
-                padding: 25px;
-                border-radius: 10px;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-                z-index: 1000;
-                font-size: 1.1rem;
-                text-align: center;
-                max-width: 80%;
-                color: #333;
-                border: 2px solid;
-            `;
-            if (type === 'error') {
-                messageBox.style.borderColor = '#dc3545';
-                messageBox.style.color = '#dc3545';
-            } else {
-                messageBox.style.borderColor = '#667eea';
-            }
-
-            messageBox.textContent = message;
-
-            const closeBtn = document.createElement('button');
-            closeBtn.textContent = 'ठीक है';
-            closeBtn.style.cssText = `
-                margin-top: 15px;
-                padding: 8px 20px;
-                background: linear-gradient(135deg, #667eea, #764ba2);
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 1rem;
-            `;
-            closeBtn.onclick = () => document.body.removeChild(messageBox);
-            messageBox.appendChild(closeBtn);
-            document.body.appendChild(messageBox);
-        }
-
-        // --- Event Listeners ---
-        candidateForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            console.log("Candidate form submitted.");
-
-            candidateData.name = candidateNameInput.value;
-            candidateData.phone = candidatePhoneInput.value;
-            candidateData.interviewDate = new Date().toLocaleDateString('hi-IN');
-
-            const micAccessGranted = await setupMicrophone();
-            if (micAccessGranted) {
-                showSection('interview');
-                // Initial welcome message setup
-                questionText.textContent = 'नमस्ते! AI इंटरव्यू सिस्टम में आपका स्वागत है। इंटरव्यू शुरू करने के लिए \'इंटरव्यू शुरू करें\' बटन दबाएं।';
-                statusText.textContent = 'AI बोल रहा है...';
-                statusDot.classList.remove('recording');
-                aiSpeaking.style.display = 'inline';
-                recordingTimerDisplay.style.display = 'none';
-
-                console.log("Speaking welcome message...");
-                // Ensure the welcome speech completes before showing the start button
-                await speakText("नमस्ते! AI इंटरव्यू सिस्टम में आपका स्वागत है। इंटरव्यू शुरू करने के लिए 'इंटरव्यू शुरू करें' बटन दबाएं।", 'hi-IN');
-
-                // After welcome speech, show the start button
-                aiSpeaking.style.display = 'none'; // Hide AI speaking indicator
-                statusText.textContent = 'इंटरव्यू शुरू करने के लिए तैयार...';
-                startBtn.style.display = 'block';
-                startBtn.disabled = false;
-            } else {
-                console.warn("Microphone setup failed. Not proceeding to interview section.");
-            }
-        });
-
-        startBtn.addEventListener('click', () => {
-            console.log("Start Interview button clicked.");
-            // Shuffle and select 10 questions
-            interviewQuestions = shuffleArray([...originalInterviewQuestions]).slice(0, 10);
-            currentQuestionIndex = -1; // Reset to -1 so nextQuestion starts at 0
-            startBtn.style.display = 'none'; // Hide start button once interview begins
-            nextQuestion(); // Start the first question
-        });
-
-        resetBtn.addEventListener('click', () => {
-            console.log("Reset Interview button clicked.");
-            resetInterview();
-        });
-
+        
         function nextQuestion() {
-            console.log(`Calling nextQuestion. Current index: ${currentQuestionIndex}`);
-            // Stop any ongoing recording before moving to the next question
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
             }
-            clearInterval(timerIntervalId); // Ensure timer interval is cleared
+            clearTimeout(questionTimerTimeout);
+            clearInterval(timerIntervalId);
+            audioChunks = [];
 
             currentQuestionIndex++;
             if (currentQuestionIndex < interviewQuestions.length) {
@@ -866,46 +629,142 @@
             }
         }
 
-        function resetInterview() {
-            console.log("Resetting interview state.");
+        function endInterview() {
+            console.log("Interview ended.");
             stopMicrophone();
-            clearTimeout(questionTimerTimeout); // Clear any pending timeouts
-            clearInterval(timerIntervalId); // Clear recording timer interval
-
-            currentQuestionIndex = -1; // Reset for welcome message
-            candidateForm.reset();
-            progressFill.style.width = '0%';
-            // Corrected syntax for the welcome message text
-            questionText.textContent = 'नमस्ते! AI इंटरव्यू सिस्टम में आपका स्वागत है। इंटरव्यू शुरू करने के लिए \'इंटरव्यू शुरू करें\' बटन दबाएं।';
-            questionCounter.textContent = 'प्रश्न 0/10';
-            categoryBadge.textContent = 'तैयार हो रहा है...';
-            statusText.textContent = 'AI बोल रहा है...';
-            statusDot.classList.remove('recording');
-            startBtn.style.display = 'none'; // Hide start button initially
-            startBtn.disabled = false;
-            aiSpeaking.style.display = 'inline';
-            recordingTimerDisplay.style.display = 'none';
-            syncStatus.innerHTML = '<span>📊 डेटा Google Sheet में सेव हो रहा है...</span>';
-            syncStatus.classList.remove('success', 'error');
-
-            showSection('registration');
+            clearTimeout(questionTimerTimeout);
+            clearInterval(timerIntervalId);
+            showSection('results');
+            submitInterviewData();
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("DOM Content Loaded. Initializing app.");
-            showSection('registration');
-            // Initial state for interview section before start button is clicked
-            questionCounter.textContent = 'प्रश्न 0/10';
-            categoryBadge.textContent = 'त तैयार हो रहा है...';
-            statusText.textContent = 'AI बोल रहा है...';
-            statusDot.classList.remove('recording');
-            aiSpeaking.style.display = 'inline';
-            recordingTimerDisplay.style.display = 'none';
+        // --- Data Submission to Google Apps Script ---
+        async function submitInterviewData() {
+            syncStatus.innerHTML = '<span>📊 डेटा Google Sheet में सेव हो रहा है...</span>';
+            syncStatus.className = 'sync-status';
 
-            // Load voices immediately on DOMContentLoaded in case they are already available
-            if ('speechSynthesis' in window) {
-                loadVoices();
+            const dataToSubmit = {
+                candidateName: candidateData.name,
+                candidatePhone: candidateData.phone,
+                interviewStatus: "Completed",
+                interviewDate: candidateData.interviewDate
+            };
+            
+            const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbyNLoFP08HFfrI0dXmd5STxKLuPXSf3FNfUNvi5PsyfxPPTbS5Z-CeNXHb4I1f82jTjA/exec';
+            const sheetName = 'HAPPY SCREENING';
+
+            try {
+                const response = await fetch(appsScriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', // Important for cross-origin requests to Apps Script
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'addRecord',
+                        sheetName: sheetName,
+                        name: dataToSubmit.candidateName,
+                        phone: dataToSubmit.candidatePhone,
+                        status: dataToSubmit.interviewStatus,
+                        date: dataToSubmit.interviewDate
+                    }),
+                });
+                
+                // Since it's a 'no-cors' request, we can't read the response.
+                // We assume success if the request doesn't throw a network error.
+                syncStatus.innerHTML = '<span>✅ डेटा सफलतापूर्वक Google Sheet में भेज दिया गया है!</span>';
+                syncStatus.classList.add('success');
+                console.log("Data submission request sent to Google Sheet.");
+
+            } catch (error) {
+                console.error("नेटवर्क या सर्वर त्रुटि:", error);
+                syncStatus.innerHTML = '<span>❌ डेटा भेजने में नेटवर्क त्रुटि हुई।</span>';
+                syncStatus.classList.add('error');
             }
+        }
+        
+        // A simple custom alert box
+        function showCustomMessage(message, type = 'info') {
+            const existingBox = document.querySelector('.custom-message-box');
+            if (existingBox) document.body.removeChild(existingBox);
+
+            const messageBox = document.createElement('div');
+            messageBox.className = 'custom-message-box';
+            messageBox.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: ${type === 'error' ? '#f8d7da' : '#d1ecf1'}; color: ${type === 'error' ? '#721c24' : '#0c5460'}; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1001; font-size: 1rem; text-align: center; border: 1px solid ${type === 'error' ? '#f5c6cb' : '#bee5eb'};`;
+            messageBox.textContent = message;
+            document.body.appendChild(messageBox);
+            setTimeout(() => {
+                if (document.body.contains(messageBox)) {
+                    document.body.removeChild(messageBox);
+                }
+            }, 4000);
+        }
+
+        // --- Event Listeners ---
+        candidateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitButton = candidateForm.querySelector('button');
+            submitButton.disabled = true;
+            submitButton.textContent = 'माइक सेटअप हो रहा है...';
+
+            candidateData.name = candidateNameInput.value.trim();
+            candidateData.phone = candidatePhoneInput.value.trim();
+            if (!candidateData.name || !candidateData.phone) {
+                showCustomMessage("कृपया पूरा नाम और फ़ोन नंबर दर्ज करें।", "error");
+                submitButton.disabled = false;
+                submitButton.textContent = 'इंटरव्यू शुरू करें';
+                return;
+            }
+            candidateData.interviewDate = new Date().toLocaleDateString('en-GB');
+
+            const micReady = await setupMicrophone();
+            if (micReady) {
+                prepareInterview();
+            } else {
+                showSection('registration');
+                submitButton.disabled = false;
+                submitButton.textContent = 'इंटरव्यू शुरू करें';
+            }
+        });
+
+        function prepareInterview() {
+            interviewQuestions = shuffleArray([...originalInterviewQuestions]).slice(0, 10);
+            currentQuestionIndex = -1;
+            showSection('interview');
+
+            const welcomeText = `नमस्ते ${candidateData.name}! AI इंटरव्यू सिस्टम में आपका स्वागत है। जब आप तैयार हों, तो शुरू करने के लिए नीचे दिए गए बटन को दबाएं।`;
+            questionText.textContent = welcomeText;
+            categoryBadge.textContent = 'स्वागत';
+            questionCounter.textContent = `प्रश्न 0/${interviewQuestions.length}`;
+            progressFill.style.width = '0%';
+            statusText.textContent = 'AI बोल रहा है...';
+            aiSpeaking.style.display = 'inline';
+            statusDot.classList.remove('recording');
+
+            speakText(welcomeText).then(() => {
+                statusText.textContent = 'शुरू करने के लिए तैयार।';
+                aiSpeaking.style.display = 'none';
+                startBtn.style.display = 'block';
+            });
+        }
+
+        startBtn.addEventListener('click', () => {
+            startBtn.style.display = 'none';
+            nextQuestion();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            // Reset all state variables
+            currentQuestionIndex = -1;
+            interviewQuestions = [];
+            audioChunks = [];
+            candidateData = { name: '', phone: '', interviewDate: '' };
+
+            // Reset UI
+            candidateNameInput.value = '';
+            candidatePhoneInput.value = '';
+            const submitButton = candidateForm.querySelector('button');
+            submitButton.disabled = false;
+            submitButton.textContent = 'इंटरव्यू शुरू करें';
+            showSection('registration');
         });
 
     </script>
