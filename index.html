@@ -453,23 +453,69 @@
         }
 
         // Text-to-Speech function
+        let hindiVoice = null;
+        function loadVoices() {
+            // Get voices and find a Hindi voice
+            const voices = window.speechSynthesis.getVoices();
+            hindiVoice = voices.find(voice => voice.lang === 'hi-IN' || voice.name.includes('Hindi'));
+            if (!hindiVoice) {
+                console.warn("Hindi voice not found. Falling back to default voice.");
+            } else {
+                console.log("Found Hindi voice:", hindiVoice.name);
+            }
+        }
+
+        // Load voices when they are ready
+        if ('speechSynthesis' in window) {
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = loadVoices;
+            }
+            // Also try to load immediately in case voices are already loaded (e.g., on page refresh)
+            loadVoices();
+        }
+
         function speakText(text, lang = 'hi-IN') {
-            console.log(`Speaking: "${text}" in ${lang}`);
-            if ('speechSynthesis' in window) {
+            return new Promise(resolve => {
+                if (!('speechSynthesis' in window)) {
+                    console.warn("Speech Synthesis not supported in this browser. Cannot speak.");
+                    showCustomMessage("आपके ब्राउज़र में AI आवाज़ समर्थित नहीं है।", "error");
+                    resolve();
+                    return;
+                }
+
+                if (window.speechSynthesis.speaking) {
+                    console.log("SpeechSynthesis is already speaking, cancelling previous utterance.");
+                    window.speechSynthesis.cancel(); // Stop any ongoing speech
+                }
+
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = lang;
+                if (hindiVoice) {
+                    utterance.voice = hindiVoice;
+                } else {
+                    // Fallback: try to find a generic voice if specific Hindi voice isn't found
+                    const voices = window.speechSynthesis.getVoices();
+                    const defaultHindiVoice = voices.find(voice => voice.lang === 'hi-IN');
+                    if (defaultHindiVoice) {
+                        utterance.voice = defaultHindiVoice;
+                    } else {
+                        console.warn("No specific Hindi voice found, using default browser voice.");
+                    }
+                }
+
+                utterance.onend = () => {
+                    console.log(`Speech finished for: "${text}"`);
+                    resolve();
+                };
+                utterance.onerror = (event) => {
+                    console.error('SpeechSynthesisUtterance.onerror:', event.error);
+                    showCustomMessage(`AI आवाज़ में त्रुटि: ${event.error}.`, "error");
+                    resolve(); // Resolve even on error to not block flow
+                };
+
+                console.log(`Attempting to speak: "${text}"`);
                 window.speechSynthesis.speak(utterance);
-                return new Promise(resolve => {
-                    utterance.onend = resolve;
-                    utterance.onerror = (event) => {
-                        console.error('SpeechSynthesisUtterance.onerror', event);
-                        resolve(); // Resolve even on error to not block flow
-                    };
-                });
-            } else {
-                console.warn("Speech Synthesis not supported in this browser.");
-                return Promise.resolve(); // Immediately resolve if not supported
-            }
+            });
         }
 
         // --- Section Management Functions ---
@@ -769,13 +815,15 @@
             const micAccessGranted = await setupMicrophone();
             if (micAccessGranted) {
                 showSection('interview');
-                // Initial welcome message is already in questionText from HTML
+                // Initial welcome message setup
+                questionText.textContent = 'नमस्ते! AI इंटरव्यू सिस्टम में आपका स्वागत है। इंटरव्यू शुरू करने के लिए \'इंटरव्यू शुरू करें\' बटन दबाएं।';
                 statusText.textContent = 'AI बोल रहा है...';
                 statusDot.classList.remove('recording');
                 aiSpeaking.style.display = 'inline';
                 recordingTimerDisplay.style.display = 'none';
 
                 console.log("Speaking welcome message...");
+                // Ensure the welcome speech completes before showing the start button
                 await speakText("नमस्ते! AI इंटरव्यू सिस्टम में आपका स्वागत है। इंटरव्यू शुरू करने के लिए 'इंटरव्यू शुरू करें' बटन दबाएं।", 'hi-IN');
 
                 // After welcome speech, show the start button
@@ -827,7 +875,8 @@
             currentQuestionIndex = -1; // Reset for welcome message
             candidateForm.reset();
             progressFill.style.width = '0%';
-            questionText.textContent = 'नमस्ते! AI इंटरव्यू सिस्टम में आपका स्वागत है। इंटरव्यू शुरू करने के लिए 'इंटरव्यू शुरू करें' बटन दबाएं।';
+            // Corrected syntax for the welcome message text
+            questionText.textContent = 'नमस्ते! AI इंटरव्यू सिस्टम में आपका स्वागत है। इंटरव्यू शुरू करने के लिए \'इंटरव्यू शुरू करें\' बटन दबाएं।';
             questionCounter.textContent = 'प्रश्न 0/10';
             categoryBadge.textContent = 'तैयार हो रहा है...';
             statusText.textContent = 'AI बोल रहा है...';
@@ -847,11 +896,16 @@
             showSection('registration');
             // Initial state for interview section before start button is clicked
             questionCounter.textContent = 'प्रश्न 0/10';
-            categoryBadge.textContent = 'तैयार हो रहा है...';
+            categoryBadge.textContent = 'त तैयार हो रहा है...';
             statusText.textContent = 'AI बोल रहा है...';
             statusDot.classList.remove('recording');
             aiSpeaking.style.display = 'inline';
             recordingTimerDisplay.style.display = 'none';
+
+            // Load voices immediately on DOMContentLoaded in case they are already available
+            if ('speechSynthesis' in window) {
+                loadVoices();
+            }
         });
 
     </script>
