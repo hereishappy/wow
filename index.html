@@ -2,260 +2,90 @@
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
-  <title>Scaffolding Interview</title>
+  <title>स्कैफोल्डिंग इंटरव्यू</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      text-align: center;
-      background: #f4f4f4;
-      padding: 30px;
-    }
-
-    input {
-      font-size: 1rem;
-      padding: 8px;
-      margin: 5px;
-      width: 250px;
-    }
-
-    button {
-      font-size: 1rem;
-      padding: 10px 25px;
-      margin-top: 20px;
-      background-color: #008cba;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
-
-    .answerBlock {
-      background: #fff;
-      padding: 15px;
-      margin-top: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-
-    audio, select {
-      margin-top: 10px;
-    }
-
-    #questionBox {
-      font-size: 1.5rem;
-      margin: 20px;
-    }
-
-    #timer {
-      font-size: 2rem;
-      color: crimson;
-    }
+    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+    h1 { text-align: center; }
+    #question-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    #answer-log { margin-top: 20px; background: #fff; padding: 10px; border-radius: 8px; }
+    button { padding: 10px 20px; font-size: 16px; margin-top: 20px; }
   </style>
 </head>
 <body>
-  <h1>🎤 स्कैफोल्डिंग इंटरव्यू - Cuplok System</h1>
-
-  <div>
-    <input type="text" id="candidateName" placeholder="नाम लिखें" oninput="checkFields()">
-    <br>
-    <input type="text" id="candidateMobile" placeholder="मोबाइल नंबर लिखें" oninput="checkFields()" maxlength="10">
-    <br>
-    <button id="startBtn" onclick="startInterview()" disabled>🔰 इंटरव्यू शुरू करें</button>
+  <h1>स्कैफोल्डिंग सेफ्टी इंटरव्यू</h1>
+  <div id="question-box">
+    <p id="question">प्रश्न लोड हो रहे हैं...</p>
+    <button onclick="startRecognition()">🎤 उत्तर देना शुरू करें</button>
+    <button onclick="nextQuestion()">➡️ अगला प्रश्न</button>
+    <button onclick="downloadAnswers()">📥 उत्तर डाउनलोड करें</button>
   </div>
-
-  <div id="questionBox"></div>
-  <div id="timer">⏳</div>
-
-  <div id="resultBox"></div>
-  <div id="answersContainer"></div>
-
+  <div id="answer-log">
+    <h3>आपके उत्तर:</h3>
+    <ul id="log"></ul>
+  </div>
   <script>
-    const questions = [
-      "Cuplok स्कैफोल्डिंग के मुख्य घटक कौन-कौन से होते हैं?",
-      "Work at height करते समय कौन-कौन से PPE जरूरी हैं?",
-      "Scaffolding inspection कितने समय में करनी चाहिए?",
-      "Cuplok और Tubular स्कैफोल्डिंग में क्या अंतर है?",
-      "Load bearing test का क्या महत्व है?",
-      "Work at height के लिए कौन-कौन से safety tags होते हैं?",
-      "Scaffolder को किस certification की जरूरत होती है?",
-      "Scaffolding के base preparation में क्या-क्या देखना होता है?",
-      "Cuplok verticals और horizontals कैसे fit होते हैं?",
-      "Platform width कितना होना चाहिए scaffold पर?"
-    ];
-
+    let questions = [];
     let current = 0;
-    let shuffled = [];
-    let recorder, audioChunks = [];
-    let scores = [];
-    let interviewAnswers = [];
-    let hindiVoice;
+    let answers = [];
 
-    window.speechSynthesis.onvoiceschanged = () => {
-      const voices = speechSynthesis.getVoices();
-      hindiVoice = voices.find(voice =>
-        voice.lang === "hi-IN" && voice.name.toLowerCase().includes("female")
-      ) || voices.find(v => v.lang === "hi-IN") || voices[0];
-    };
-
-    function checkFields() {
-      const name = document.getElementById("candidateName").value.trim();
-      const mobile = document.getElementById("candidateMobile").value.trim();
-      document.getElementById("startBtn").disabled = !(name && mobile.length === 10);
+    async function loadQuestions() {
+      const res = await fetch('scaffolding_questions_hi.json');
+      questions = await res.json();
+      shuffle(questions);
+      speak(questions[current]);
+      document.getElementById('question').innerText = questions[current];
     }
 
-    function startInterview() {
-      shuffled = questions.sort(() => 0.5 - Math.random()).slice(0, 10);
-      current = 0;
-      scores = [];
-      interviewAnswers = [];
-      document.getElementById("startBtn").style.display = "none";
-      document.getElementById("answersContainer").innerHTML = "";
-      askQuestion();
-    }
-
-    function askQuestion() {
-      if (current >= shuffled.length) {
-        endInterview();
-        return;
-      }
-
-      const q = shuffled[current];
-      document.getElementById("questionBox").innerText = `प्रश्न ${current + 1}: ${q}`;
-      speakQuestion(q);
-      startTimer(20);
-      startRecording();
-    }
-
-    function speakQuestion(text) {
-      const msg = new SpeechSynthesisUtterance();
-      msg.text = text;
-      msg.lang = "hi-IN";
-      msg.voice = hindiVoice;
-      msg.rate = 0.9;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(msg);
-    }
-
-    function startTimer(sec) {
-      let timeLeft = sec;
-      const timerEl = document.getElementById("timer");
-
-      const interval = setInterval(() => {
-        timerEl.innerText = `⏳ ${timeLeft} सेकंड शेष`;
-        timeLeft--;
-
-        if (timeLeft < 0) {
-          clearInterval(interval);
-          stopRecording();
-        }
-      }, 1000);
-    }
-
-    async function startRecording() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        recorder = new MediaRecorder(stream);
-        audioChunks = [];
-
-        recorder.ondataavailable = e => audioChunks.push(e.data);
-        recorder.onstop = () => {
-          const audioBlob = new Blob(audioChunks);
-          const audioURL = URL.createObjectURL(audioBlob);
-
-          const container = document.getElementById("answersContainer");
-          const div = document.createElement("div");
-          div.className = "answerBlock";
-
-          const questionText = `<strong>प्रश्न ${current + 1}:</strong> ${shuffled[current]}`;
-          const audio = `<audio controls src="${audioURL}"></audio>`;
-          const scoreSelect = `
-            <label>स्कोर दें: 
-              <select onchange="updateScore(${current}, this.value)">
-                <option value="">-- चुनें --</option>
-                ${[...Array(11).keys()].map(n => `<option value="${n}">${n}</option>`).join("")}
-              </select>
-            </label>
-          `;
-
-          div.innerHTML = `${questionText}<br>${audio}<br><br>${scoreSelect}`;
-          container.appendChild(div);
-
-          interviewAnswers.push({
-            question: shuffled[current],
-            audioURL: audioURL
-          });
-
-          scores[current] = 0;
-          current++;
-          setTimeout(() => askQuestion(), 1000);
-        };
-
-        recorder.start();
-      } catch (err) {
-        alert("🎤 माइक की अनुमति नहीं मिली! कृपया एक्सेस दें।");
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
       }
     }
 
-    function stopRecording() {
-      if (recorder && recorder.state === "recording") recorder.stop();
+    function speak(text) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'hi-IN';
+      speechSynthesis.speak(utter);
     }
 
-    function updateScore(index, value) {
-      scores[index] = parseInt(value) || 0;
-    }
-
-    function calculateScore() {
-      return scores.reduce((a, b) => a + b, 0);
-    }
-
-    function endInterview() {
-      const total = calculateScore();
-      document.getElementById("questionBox").innerText = "✅ इंटरव्यू समाप्त हो गया!";
-      document.getElementById("timer").innerText = "";
-      document.getElementById("startBtn").style.display = "block";
-      document.getElementById("startBtn").innerText = "🔁 फिर से करें";
-
-      document.getElementById("resultBox").innerHTML = `
-        <h2>कुल स्कोर: ${total} / 100</h2>
-        <p>धन्यवाद! आपने इंटरव्यू पूरा किया।</p>
-      `;
-
-      const candidateData = {
-        name: document.getElementById("candidateName").value.trim(),
-        mobile: document.getElementById("candidateMobile").value.trim()
+    function startRecognition() {
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = 'hi-IN';
+      recognition.onresult = (event) => {
+        const answer = event.results[0][0].transcript;
+        answers.push({ question: questions[current], answer });
+        const li = document.createElement('li');
+        li.innerText = `${questions[current]}\n🗣️ ${answer}`;
+        document.getElementById('log').appendChild(li);
       };
-
-      saveInterviewData(candidateData);
+      recognition.start();
     }
 
-    function saveInterviewData(candidateData) {
-      const score = calculateScore();
+    function nextQuestion() {
+      if (current < questions.length - 1) {
+        current++;
+        document.getElementById('question').innerText = questions[current];
+        speak(questions[current]);
+      } else {
+        alert("सभी प्रश्न पूरे हो गए हैं!");
+      }
+    }
 
-      fetch('https://script.google.com/macros/s/AKfycbyEHkluguvDcNGVQA3SqNX7xZWpchq2FRQWQTbGUtwvLhQyMFBDmKsazBGq9c_mHvRXgg/exec', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          candidate: candidateData.name,
-          mobile: candidateData.mobile,
-          score: score
-        })
-      })
-      .then(res => res.text())
-      .then(response => {
-        console.log('✅ Score posted to Blogger:', response);
-        alert("✅ इंटरव्यू स्कोर Blogger पर पोस्ट हो गया!");
-      })
-      .catch(error => {
-        console.error('❌ पोस्ट करने में समस्या:', error);
-        alert("❌ Blogger पर पोस्ट नहीं हो पाया।");
+    function downloadAnswers() {
+      let content = "स्कैफोल्डिंग सेफ्टी इंटरव्यू उत्तर\n\n";
+      answers.forEach((item, i) => {
+        content += `Q${i + 1}: ${item.question}\nA: ${item.answer}\n\n`;
       });
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'scaffolding_interview_answers.txt';
+      a.click();
     }
+
+    loadQuestions();
   </script>
 </body>
 </html>
