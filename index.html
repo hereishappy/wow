@@ -2,13 +2,47 @@
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
-  <title>Simple Hindi Interview - Scaffolding</title>
+  <title>Scaffolding Interview</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       text-align: center;
       background: #f4f4f4;
       padding: 30px;
+    }
+
+    input {
+      font-size: 1rem;
+      padding: 8px;
+      margin: 5px;
+      width: 250px;
+    }
+
+    button {
+      font-size: 1rem;
+      padding: 10px 25px;
+      margin-top: 20px;
+      background-color: #008cba;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .answerBlock {
+      background: #fff;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    audio, select {
+      margin-top: 10px;
     }
 
     #avatarContainer {
@@ -24,42 +58,31 @@
       font-size: 2rem;
       color: crimson;
     }
-
-    button {
-      font-size: 1rem;
-      padding: 10px 25px;
-      margin-top: 20px;
-      background-color: #008cba;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #005f6b;
-    }
-
-    audio {
-      margin-top: 10px;
-    }
   </style>
 </head>
 <body>
-  <h1>🎤 Hindi इंटरव्यू - Scaffolding (DEMO)</h1>
+  <h1>🎤 स्कैफोल्डिंग इंटरव्यू - Cuplok System</h1>
 
   <div id="avatarContainer">
     <video width="300" autoplay muted loop>
       <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
-      आपकी ब्राउज़र वीडियो सपोर्ट नहीं करता।
     </video>
     <p><i>AI इंटरव्यूअर (Demo Look)</i></p>
   </div>
 
-  <div id="questionBox">शुरू करने के लिए नीचे क्लिक करें</div>
+  <div>
+    <input type="text" id="candidateName" placeholder="नाम लिखें" oninput="checkFields()">
+    <br>
+    <input type="text" id="candidateMobile" placeholder="मोबाइल नंबर लिखें" oninput="checkFields()" maxlength="10">
+    <br>
+    <button id="startBtn" onclick="startInterview()" disabled>🔰 इंटरव्यू शुरू करें</button>
+  </div>
+
+  <div id="questionBox"></div>
   <div id="timer">⏳</div>
 
-  <button id="startBtn" onclick="startInterview()">🔰 इंटरव्यू शुरू करें</button>
   <div id="resultBox"></div>
+  <div id="answersContainer"></div>
 
   <script>
     const questions = [
@@ -78,11 +101,20 @@
     let current = 0;
     let shuffled = [];
     let recorder, audioChunks = [];
+    let scores = [];
+
+    function checkFields() {
+      const name = document.getElementById("candidateName").value.trim();
+      const mobile = document.getElementById("candidateMobile").value.trim();
+      document.getElementById("startBtn").disabled = !(name && mobile.length === 10);
+    }
 
     function startInterview() {
       shuffled = questions.sort(() => 0.5 - Math.random()).slice(0, 10);
       current = 0;
+      scores = [];
       document.getElementById("startBtn").style.display = "none";
+      document.getElementById("answersContainer").innerHTML = "";
       askQuestion();
     }
 
@@ -123,10 +155,28 @@
         recorder.onstop = () => {
           const audioBlob = new Blob(audioChunks);
           const audioURL = URL.createObjectURL(audioBlob);
-          const audio = document.createElement("audio");
-          audio.controls = true;
-          audio.src = audioURL;
-          document.body.appendChild(audio);
+
+          const container = document.getElementById("answersContainer");
+          const div = document.createElement("div");
+          div.className = "answerBlock";
+
+          const questionText = `<strong>प्रश्न ${current + 1}:</strong> ${shuffled[current]}`;
+          const audio = `<audio controls src="${audioURL}"></audio>`;
+          const scoreSelect = `
+            <label>स्कोर दें: 
+              <select onchange="updateScore(${current}, this.value)">
+                <option value="">-- चुनें --</option>
+                ${[...Array(11).keys()].map(n => `<option value="${n}">${n}</option>`).join("")}
+              </select>
+            </label>
+          `;
+
+          div.innerHTML = `${questionText}<br>${audio}<br><br>${scoreSelect}`;
+          container.appendChild(div);
+
+          scores[current] = 0;
+          current++;
+          setTimeout(() => askQuestion(), 1000);
         };
 
         recorder.start();
@@ -137,19 +187,50 @@
 
     function stopRecording() {
       if (recorder && recorder.state === "recording") recorder.stop();
-      current++;
-      setTimeout(() => askQuestion(), 1000);
+    }
+
+    function updateScore(index, value) {
+      scores[index] = parseInt(value) || 0;
     }
 
     function endInterview() {
+      const total = scores.reduce((a, b) => a + b, 0);
       document.getElementById("questionBox").innerText = "✅ इंटरव्यू समाप्त हो गया!";
       document.getElementById("timer").innerText = "";
       document.getElementById("startBtn").style.display = "block";
       document.getElementById("startBtn").innerText = "🔁 फिर से करें";
 
       document.getElementById("resultBox").innerHTML = `
-        <h2>आपका इंटरव्यू रिकॉर्ड हो चुका है। धन्यवाद!</h2>
+        <h2>कुल स्कोर: ${total} / 100</h2>
+        <p>धन्यवाद! आपने इंटरव्यू पूरा किया।</p>
       `;
+
+      const candidate = document.getElementById("candidateName").value.trim();
+      const mobile = document.getElementById("candidateMobile").value.trim();
+      postToBlogger(candidate, mobile, total);
+    }
+
+    function postToBlogger(candidate, mobile, score) {
+      fetch("https://script.google.com/macros/s/AKfycbyEHkluguvDcNGVQA3SqNX7xZWpchq2FRQWQTbGUtwvLhQyMFBDmKsazBGq9c_mHvRXgg/exec", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          candidate: candidate,
+          mobile: mobile,
+          score: score
+        })
+      })
+      .then(res => res.text())
+      .then(data => {
+        alert("✅ स्कोर Blogger पर पोस्ट हो गया!");
+        console.log(data);
+      })
+      .catch(err => {
+        alert("❌ पोस्ट करने में समस्या आई!");
+        console.error(err);
+      });
     }
   </script>
 </body>
