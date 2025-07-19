@@ -297,16 +297,21 @@
             margin-top: 20px;
         }
 
-        /* Camera Feed Styles */
-        #cameraFeed {
-            width: 100%;
-            max-width: 400px;
+        /* Camera Feed Styles (now hidden, used for capture) */
+        #hiddenVideoFeed {
+            display: none; /* Hidden, but used to get video frames */
+        }
+
+        #hiddenCanvas {
+            display: none; /* Hidden, used for drawing and capturing image */
+        }
+
+        #capturedPhoto {
+            max-width: 100%;
             height: auto;
             border-radius: 15px;
-            margin-bottom: 20px;
-            background-color: #333;
-            transform: scaleX(-1); /* Mirror the camera feed */
-            display: none; /* Hidden by default, shown when camera is active */
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
         /* Responsive adjustments */
@@ -369,8 +374,8 @@
                 <div id="questionText" class="question-box">
                     इंटरव्यू शुरू करने के लिए तैयार हो जाइए...
                 </div>
-                <!-- Added 'muted' attribute to prevent audio loopback/echo -->
-                <video id="cameraFeed" autoplay playsinline muted></video>
+                <!-- Hidden video element to access camera stream for photo capture -->
+                <video id="hiddenVideoFeed" autoplay playsinline muted></video>
                 <div class="status-area">
                     <div id="statusDot" class="status-dot"></div>
                     <span id="statusText">तैयार हो रहा है...</span>
@@ -380,6 +385,17 @@
                 <div class="controls">
                     <button id="startBtn">इंटरव्यू शुरू करें</button>
                     <button id="nextBtn" style="display: none;">अगला प्रश्न</button>
+                </div>
+            </div>
+
+            <!-- Photo Capture Section -->
+            <div id="photoCaptureSection" class="section">
+                <h2>लाइव फोटो सबमिशन</h2>
+                <p>कृपया अपनी लाइव फोटो सबमिट करें।</p>
+                <img id="capturedPhoto" style="display: none;">
+                <div class="controls">
+                    <button id="capturePhotoBtn">फोटो कैप्चर करें</button>
+                    <button id="confirmPhotoBtn" style="display: none;">फोटो कन्फर्म करें और सबमिट करें</button>
                 </div>
             </div>
 
@@ -396,6 +412,9 @@
         </div>
     </div>
 
+    <!-- Hidden Canvas for image processing -->
+    <canvas id="hiddenCanvas"></canvas>
+
     <script>
         // Global variables for interview state and data
         let currentQuestionIndex = 0;
@@ -404,9 +423,9 @@
         let recordingStartTime;
         let mediaRecorder;
         let audioChunks = [];
-        let stream; // To hold the camera stream
+        let stream; // To hold the camera stream (video + audio)
 
-        // Candidate Data object - intentionally excludes email and working place
+        // Candidate Data object
         let candidateData = {
             name: '',
             phone: '',
@@ -416,6 +435,7 @@
         // UI Element references
         const registrationSection = document.getElementById('registrationSection');
         const interviewSection = document.getElementById('interviewSection');
+        const photoCaptureSection = document.getElementById('photoCaptureSection'); // New section
         const resultsSection = document.getElementById('resultsSection');
 
         const candidateForm = document.getElementById('candidateForm');
@@ -426,7 +446,12 @@
         const questionCounter = document.getElementById('questionCounter');
         const categoryBadge = document.getElementById('categoryBadge');
         const questionText = document.getElementById('questionText');
-        const cameraFeed = document.getElementById('cameraFeed');
+        const hiddenVideoFeed = document.getElementById('hiddenVideoFeed'); // Hidden video element
+        const hiddenCanvas = document.getElementById('hiddenCanvas'); // Hidden canvas for photo capture
+        const capturedPhotoImg = document.getElementById('capturedPhoto'); // Image tag to display captured photo
+        const capturePhotoBtn = document.getElementById('capturePhotoBtn'); // Button to trigger photo capture
+        const confirmPhotoBtn = document.getElementById('confirmPhotoBtn'); // Button to confirm photo and submit data
+
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const aiSpeaking = document.getElementById('aiSpeaking');
@@ -461,42 +486,42 @@
             console.log(`Showing section: ${sectionId}`);
             registrationSection.classList.remove('active');
             interviewSection.classList.remove('active');
+            photoCaptureSection.classList.remove('active'); // New section
             resultsSection.classList.remove('active');
 
             if (sectionId === 'registration') {
                 registrationSection.classList.add('active');
             } else if (sectionId === 'interview') {
                 interviewSection.classList.add('active');
+            } else if (sectionId === 'photoCapture') { // New section ID
+                photoCaptureSection.classList.add('active');
             } else if (sectionId === 'results') {
                 resultsSection.classList.add('active');
             }
         }
 
         // --- Camera Setup and Teardown ---
-        // Requests camera and microphone access and displays the feed
+        // Requests camera and microphone access and assigns stream to hidden video
         async function setupCamera() {
             console.log("Attempting to set up camera and microphone...");
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                cameraFeed.srcObject = stream;
-                cameraFeed.style.display = 'block'; // Show camera feed once stream is active
+                hiddenVideoFeed.srcObject = stream; // Assign stream to hidden video for capture
+                // No need to display hiddenVideoFeed, it's just for capturing frames
                 console.log("Camera and microphone access granted.");
             } catch (err) {
                 console.error("कैमरा एक्सेस करने में त्रुटि:", err);
-                // Use a custom message box instead of alert() for better UX
                 showCustomMessage("कैमरा एक्सेस करने में समस्या हुई। कृपया सुनिश्चित करें कि आपने अनुमति दी है।", "error");
-                cameraFeed.style.display = 'none'; // Hide camera feed if access fails
                 stream = null; // Ensure stream is null if access fails
             }
         }
 
-        // Stops all camera and microphone tracks and hides the feed
+        // Stops all camera and microphone tracks
         function stopCamera() {
             console.log("Stopping camera and microphone tracks...");
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
-                cameraFeed.srcObject = null;
-                cameraFeed.style.display = 'none'; // Hide camera feed
+                hiddenVideoFeed.srcObject = null; // Clear srcObject
                 stream = null; // Clear stream reference
                 console.log("Camera and microphone stopped.");
             }
@@ -536,20 +561,19 @@
                 }, question.aiDuration);
 
             } else {
-                // If all questions are done, end the interview
-                console.log("All questions completed. Ending interview.");
-                endInterview();
+                // If all questions are done, transition to photo capture
+                console.log("All questions completed. Transitioning to photo capture.");
+                endInterview(); // This will now lead to photo capture
             }
         }
 
         // Starts audio recording from the user's microphone
         function startRecording() {
             console.log("Attempting to start recording...");
-            if (!stream) {
-                console.error("रिकॉर्डिंग के लिए स्ट्रीम उपलब्ध नहीं है।");
-                showCustomMessage("रिकॉर्डिंग शुरू करने के लिए कैमरा/माइक एक्सेस आवश्यक है।", "error");
-                // Fallback: If no stream, allow user to proceed or restart
-                nextBtn.style.display = 'block'; // Show next button to allow progression
+            if (!stream || !stream.getAudioTracks().length) {
+                console.error("रिकॉर्डिंग के लिए ऑडियो स्ट्रीम उपलब्ध नहीं है।");
+                showCustomMessage("रिकॉर्डिंग शुरू करने के लिए माइक एक्सेस आवश्यक है।", "error");
+                nextBtn.style.display = 'block'; // Allow user to proceed even if recording fails
                 statusText.textContent = 'रिकॉर्डिंग विफल। अगले प्रश्न पर जाएं।';
                 statusDot.classList.remove('recording');
                 aiSpeaking.style.display = 'none';
@@ -572,18 +596,17 @@
             }
 
             try {
-                // Initialize MediaRecorder and prepare for data collection
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                // Create a new stream with only the audio track for MediaRecorder
+                const audioStream = new MediaStream([stream.getAudioTracks()[0]]);
+                mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
                 audioChunks = []; // Clear previous audio chunks
 
                 mediaRecorder.ondataavailable = (event) => {
-                    // Collect audio data chunks as they become available
                     audioChunks.push(event.data);
                     console.log(`Audio data chunk available. Total chunks: ${audioChunks.length}`);
                 };
 
                 mediaRecorder.onstop = () => {
-                    // This event fires when recording stops (either manually or by duration)
                     console.log("ऑडियो रिकॉर्डिंग समाप्त हुई। चंक्स की संख्या:", audioChunks.length);
                     nextBtn.style.display = 'block'; // Show next button to proceed
                     statusText.textContent = 'अगले प्रश्न के लिए तैयार...';
@@ -642,13 +665,50 @@
             }, 1000);
         }
 
-        // Ends the interview, stops camera, and shows results section
+        // Ends the interview, stops camera, and shows photo capture section
         function endInterview() {
-            console.log("Interview ended. Stopping camera and submitting data.");
-            stopCamera(); // Stop camera and microphone
-            showSection('results'); // Show the results section
-            submitInterviewData(); // Trigger data submission
+            console.log("Interview ended. Stopping camera and transitioning to photo capture.");
+            stopCamera(); // Stop camera and microphone tracks
+            showSection('photoCapture'); // Show the new photo capture section
+            // Ensure photo capture buttons are in initial state
+            capturedPhotoImg.style.display = 'none';
+            capturedPhotoImg.src = ''; // Clear any previous image
+            capturePhotoBtn.style.display = 'block';
+            confirmPhotoBtn.style.display = 'none';
         }
+
+        // --- Photo Capture Logic ---
+        async function capturePhoto() {
+            console.log("Attempting to capture photo...");
+            if (!stream || !stream.getVideoTracks().length) {
+                console.error("फोटो कैप्चर करने के लिए वीडियो स्ट्रीम उपलब्ध नहीं है।");
+                showCustomMessage("फोटो कैप्चर करने के लिए कैमरा एक्सेस आवश्यक है।", "error");
+                return;
+            }
+
+            const videoTrack = stream.getVideoTracks()[0];
+            const settings = videoTrack.getSettings();
+
+            // Set canvas dimensions to match video stream
+            hiddenCanvas.width = settings.width;
+            hiddenCanvas.height = settings.height;
+            const context = hiddenCanvas.getContext('2d');
+
+            // Draw the current frame from the hidden video element onto the canvas
+            // Ensure hiddenVideoFeed is playing the stream
+            if (hiddenVideoFeed.readyState >= 2) { // Check if video is ready
+                context.drawImage(hiddenVideoFeed, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+                capturedPhotoImg.src = hiddenCanvas.toDataURL('image/png');
+                capturedPhotoImg.style.display = 'block';
+                capturePhotoBtn.style.display = 'none';
+                confirmPhotoBtn.style.display = 'block';
+                console.log("Photo captured and displayed.");
+            } else {
+                console.error("Hidden video feed not ready for drawing.");
+                showCustomMessage("फोटो कैप्चर करने में समस्या हुई। कृपया पुनः प्रयास करें।", "error");
+            }
+        }
+
 
         // --- Data Submission to Google Apps Script ---
         async function submitInterviewData() {
@@ -663,7 +723,8 @@
                 candidatePhone: candidateData.phone,
                 interviewStatus: "Completed",
                 interviewDate: candidateData.interviewDate
-                // If detailed answers were captured, they would be added here.
+                // Note: Captured photo data (base64) is NOT included here due to Google Sheet cell size limitations.
+                // For photo storage, you would typically upload it to Google Drive and save the URL in the sheet.
             };
 
             console.log("Google Sheet में सबमिट करने के लिए डेटा:", dataToSubmit);
@@ -703,6 +764,8 @@
                 console.error("नेटवर्क या सर्वर त्रुटि:", error);
                 syncStatus.innerHTML = '<span>❌ नेटवर्क त्रुटि: कृपया पुनः प्रयास करें।</span>';
                 syncStatus.classList.add('error');
+            } finally {
+                showSection('results'); // Always show results section after submission attempt
             }
         }
 
@@ -786,6 +849,18 @@
             nextQuestion(); // Advance to the next question
         });
 
+        // Event listener for the "Capture Photo" button
+        capturePhotoBtn.addEventListener('click', () => {
+            console.log("Capture Photo button clicked.");
+            capturePhoto();
+        });
+
+        // Event listener for the "Confirm Photo and Submit" button
+        confirmPhotoBtn.addEventListener('click', () => {
+            console.log("Confirm Photo and Submit button clicked.");
+            submitInterviewData();
+        });
+
         // Event listener for the "Start New Interview" button on the results page
         resetBtn.addEventListener('click', () => {
             console.log("Reset Interview button clicked.");
@@ -823,6 +898,12 @@
             // Reset sync status message and styling
             syncStatus.innerHTML = '<span>📊 डेटा Google Sheet में सेव हो रहा है...</span>';
             syncStatus.classList.remove('success', 'error');
+
+            // Reset photo capture section
+            capturedPhotoImg.style.display = 'none';
+            capturedPhotoImg.src = '';
+            capturePhotoBtn.style.display = 'block';
+            confirmPhotoBtn.style.display = 'none';
 
             showSection('registration'); // Show the registration section
         }
